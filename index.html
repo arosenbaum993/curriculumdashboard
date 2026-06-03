@@ -129,7 +129,7 @@ header.masthead{
 .section-title::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* ---------------- SUMMARY CARDS ---------------- */
-.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
 .card{
   background:var(--surface);border:1px solid var(--line);
   border-top:3px solid var(--primary);
@@ -280,7 +280,7 @@ footer{
           <div class="dash-sub">Curriculum Map Dashboard</div>
         </div>
         <div class="head-meta">
-          <span class="year-pill">2025 &ndash; 2026</span>
+          <span class="year-pill">2026 &ndash; 2027</span>
           <span class="updated" id="updated">Not yet loaded</span>
           <button class="refresh" id="refreshBtn" title="Refreshes automatically every 15 minutes">&#8635; Refresh</button>
         </div>
