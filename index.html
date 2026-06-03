@@ -346,8 +346,8 @@ function monthIndex(s){
   var k=String(s).trim().toLowerCase().slice(0,3);
   return (k in MONTHS)?MONTHS[k]:-1;
 }
-/* Academic year 2025-2026: Aug-Dec -> 2025, Jan-Jul -> 2026 */
-function schoolYearFor(monthIdx){ return monthIdx>=7 ? 2025 : 2026; }
+/* Academic year 2026-2027: Aug-Dec -> 2026, Jan-Jul -> 2027 */
+function schoolYearFor(monthIdx){ return monthIdx>=7 ? 2026 : 2027; }
 
 /* parseDate: returns a Date, or null for blank / TBD / N/A / any ? */
 function parseDate(raw){
