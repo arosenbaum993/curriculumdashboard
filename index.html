@@ -285,11 +285,11 @@ footer{
           <button class="refresh" id="refreshBtn" title="Refreshes automatically every 15 minutes">&#8635; Refresh</button>
         </div>
       </div>
-      <nav class="selector" id="selector">
-        <button data-school="MCA" class="active">MCA</button>
-        <button data-school="TGE">TGE</button>
-        <button data-school="MCMS">MCMS</button>
-      </nav>
+     <nav class="selector" id="selector">
+  <button data-school="TGE">TGE</button>
+  <button data-school="MCMS">MCMS</button>
+  <button data-school="MCA">MCA</button>
+</nav>
     </header>
 
     <main id="content"><!-- rendered by JS --></main>
@@ -328,7 +328,7 @@ var META = {
 };
 
 var DATA = null;          // full payload {MCA:[],TGE:[],MCMS:[]}
-var current = "MCA";      // selected school
+var current = "TGE";      // selected school
 var activeFilter = "All"; // table subject filter
 
 /* ================================================================
