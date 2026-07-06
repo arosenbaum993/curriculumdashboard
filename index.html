@@ -175,6 +175,83 @@ tr.subject-row td{
 .bar i{display:block;height:100%;background:var(--ok);border-radius:4px}
 .bar i.warn{background:var(--warn)} .bar i.bad{background:var(--bad)}
 
+/* ---------- unit progress grid (mockup match) ---------- */
+.gridbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.gridbar select{
+  background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  color:var(--text);font-family:'Crimson Pro',serif;font-size:.9rem;
+  padding:6px 10px;outline:none;cursor:pointer;
+}
+.gridbar select:focus{border-color:var(--gold)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:.82rem;color:var(--muted)}
+.legend span{white-space:nowrap}
+.legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.dot.bad{background:var(--bad)} .dot.none{background:var(--none)}
+.gridbar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.gridbar .right button{
+  font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:1px;
+  background:var(--surface);color:var(--muted);border:1px solid var(--line);
+  border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s;white-space:nowrap;
+}
+.gridbar .right button:hover{color:var(--text);border-color:var(--gold)}
+.gridbar .right button.active{background:var(--gold);color:#1a1206;border-color:var(--gold)}
+
+.upg thead th{text-align:center}
+.upg thead th.th-teacher{
+  text-align:left;position:sticky;left:0;z-index:4;background:var(--surface2);
+}
+.upg thead th.unit-head{border-left:1px solid var(--line)}
+.unit-head .uh-win, .unit-head .uh-due{
+  display:block;font-family:'Crimson Pro',serif;text-transform:none;letter-spacing:0;
+  font-weight:400;font-size:.8rem;margin-top:2px;
+}
+.unit-head .uh-win{color:var(--muted)}
+.unit-head .uh-due{color:var(--gold-soft)}
+.upg thead tr.subhead th{top:auto;font-size:.64rem;color:var(--muted);padding:6px 8px}
+.upg thead tr.subhead th.first-of-unit{border-left:1px solid var(--line)}
+.upg td.icell{text-align:center;padding:8px 6px;min-width:56px}
+.upg td.icell.first-of-unit{border-left:1px solid var(--line)}
+.upg td.cell-teacher{
+  position:sticky;left:0;z-index:1;background:var(--surface);white-space:nowrap;
+}
+.upg tbody tr:hover td.cell-teacher{background:#1f1614}
+.upg td.alert-td{border-left:1px solid var(--line);white-space:nowrap;font-size:.86rem}
+.upg th.th-alert{border-left:1px solid var(--line)}
+.alert.ok{color:#5fc78a} .alert.warn{color:#eaa85c} .alert.bad{color:#ef7d75}
+.st{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;font-size:.8rem;font-weight:700;
+  font-family:'Crimson Pro',serif;
+}
+.st.done{background:var(--ok-bg);color:#5fc78a;border:1px solid var(--ok)}
+.st.soon{background:var(--warn-bg);color:#eaa85c;border:1px solid var(--warn)}
+.st.over{background:var(--bad-bg);color:#ef7d75;border:1px solid var(--bad)}
+.st.future{background:transparent;color:var(--none);border:1px solid var(--line)}
+.st.na{color:var(--none);border:none;background:transparent}
+.icell .idate{display:block;font-size:.7rem;color:var(--muted);margin-top:3px;white-space:nowrap}
+
+.cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;align-items:start}
+.cards-row .panel{padding:16px 18px;font-size:.9rem}
+.cards-row .panel p{color:var(--muted);font-size:.88rem;margin-top:8px}
+.keylist{list-style:none;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:.88rem}
+.keylist b{color:var(--text);font-weight:600}
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mini-stats .ms .v{font-family:'Cinzel',serif;font-weight:700;font-size:1.7rem;line-height:1.1}
+.mini-stats .ms .v.ok{color:var(--ok)} .mini-stats .ms .v.warn{color:var(--warn)}
+.mini-stats .ms .v.bad{color:var(--bad)} .mini-stats .ms .v.gold{color:var(--gold)}
+.mini-stats .ms .l{font-size:.76rem;color:var(--muted);margin-top:2px}
+.uplist{list-style:none;display:flex;flex-direction:column;gap:7px;font-size:.88rem}
+.uplist li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.uplist li:last-child{border-bottom:none;padding-bottom:0}
+.uplist .d{color:var(--gold-soft);font-family:'Cinzel',serif;font-size:.72rem;white-space:nowrap}
+.linkish{
+  background:none;border:none;color:var(--gold);font-family:'Crimson Pro',serif;
+  font-size:.86rem;cursor:pointer;padding:0;margin-top:10px;text-decoration:underline;
+}
+.tiplist{list-style:none;display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:.86rem}
+.tiplist .tip-gold{color:var(--gold-soft)}
+
 /* states */
 .state-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:46px 30px;text-align:center;margin-top:40px}
 .state-card h2{font-family:'Cinzel',serif;color:var(--gold);font-size:1.2rem;margin-bottom:10px}
@@ -196,9 +273,14 @@ footer .creed{font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:2px;tex
 @media (max-width:960px){
   .cards{grid-template-columns:repeat(2,1fr)}
   .grid2{grid-template-columns:1fr}
+  .cards-row{grid-template-columns:1fr 1fr}
   .head-meta{align-items:flex-start;text-align:left;width:100%}
   .school-name{font-size:1.5rem}
   .toolbar input{margin-left:0;width:100%}
+  .gridbar .right{margin-left:0;width:100%}
+}
+@media (max-width:620px){
+  .cards-row{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -251,6 +333,7 @@ footer .creed{font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:2px;tex
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzt_El1qJUafcLvVKOE-DzPd16qzJvrSoYskvlN_qp_wnhSIGbYD05WsMFMoSSh65fI1g/exec";
 var ACADEMIC_YEAR_START = 2026;   /* 2026 renders "2026-2027"; Aug-Dec -> 2026, Jan-Jul -> 2027 */
 var DUE_SOON_DAYS = 14;           /* window for "due soon" flags and the deadline panel */
+var GRID_DUE_SOON_DAYS = 7;       /* tighter window used by the Unit Progress grid, per mockup */
 
 var SCHOOL_NAMES = {
   DISTRICT: "McIntosh County Schools",
@@ -265,13 +348,18 @@ var SCHOOL_NAMES = {
       submitted? test date, test talk done (if tracked).
         MCA  : plan = plan,   assessment = shared, testTalk tracked
         TGE  : plan = shared, assessment = test,   testTalk tracked
-        MCMS : plan = plan,   assessment = test,   testTalk not in sheet yet
+        MCMS : plan = plan,   assessment = test,   testTalk tracked
+                (Test Talk column added to the MCMS tab May 2026)
    ================================================================ */
 
 /* ---------------- state ---------------- */
 var RAW = null;          /* payload.schools */
 var ROWS = [];           /* normalized rows */
-var state = { school:"DISTRICT", view:"overview", filter:"all", search:"" };
+var state = {
+  school:"DISTRICT", view:"overview", filter:"all", search:"",
+  unitsMode:"grid",                       /* grid | list */
+  gSubject:"all", gGrade:"all", gStatus:"all"
+};
 
 /* ---------------- school logos ----------------
    The logos already live as base64 data URIs inside index.html
@@ -345,6 +433,13 @@ function parseDate(s){
   var d2 = new Date(s);
   return isNaN(d2) ? null : d2;
 }
+function ttVal(v){
+  /* checkbox true/false, or text like "x" / "yes"; blank means not done */
+  if(v === true) return true;
+  if(v === false) return false;
+  if(v === null || v === undefined) return null;   /* not tracked */
+  return filled(v);
+}
 function mkUnit(n, plan, assess, dateStr, tt){
   var date = parseDate(dateStr);
   var p = filled(plan), a = filled(assess);
@@ -360,19 +455,24 @@ function normalize(schools){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
       sub:t.course || "",
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, u.testTalk); })
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk)); })
     });
   });
   (schools.TGE || []).forEach(function(t){
     rows.push({
       school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"",
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, u.testTalk); })
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk)); })
     });
   });
   (schools.MCMS || []).forEach(function(t){
     rows.push({
       school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"",
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.test, u.date, null); })
+      units:(t.units || []).map(function(u,i){
+        /* Test Talk column added to the MCMS tab; if the Apps Script
+           payload does not include u.testTalk yet, this stays null
+           and the grid shows a dash until the script is redeployed. */
+        return mkUnit(i+1, u.plan, u.test, u.date, "testTalk" in u ? ttVal(u.testTalk) : null);
+      })
     });
   });
   return rows;
@@ -431,6 +531,9 @@ function scopeRows(){
 /* ---------------- formatting helpers ---------------- */
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function fmtDate(d){ return d ? (d.getMonth()+1) + "/" + d.getDate() + "/" + d.getFullYear() : ""; }
+var MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtShort(d){ return d ? MON_SHORT[d.getMonth()] + " " + d.getDate() : ""; }
+function fmtLong(d){ return d ? MON_SHORT[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear() : ""; }
 function fmtStamp(d){
   var h = d.getHours(), m = d.getMinutes(), ap = h >= 12 ? "PM" : "AM";
   h = h % 12 || 12;
@@ -559,9 +662,232 @@ function viewTeachers(){
     + '<div class="banner">When a teacher falls behind on unit or assessment submission, the principal provides support, intervention, and follow-up. The purpose is proactive support, not reactive accountability.</div>';
 }
 
-function viewUnits(){
-  var units = collectUnits(scopeRows());
+/* ================================================================
+   UNITS TAB - Unit Progress by Teacher (grid, mockup match)
+   with a List View toggle that shows the original units table.
+   ================================================================ */
+
+/* per-item status inside the grid.
+   kind: "ua" (assessment) | "up" (plan) | "tt" (test talk) */
+function itemState(u, kind){
+  if(!u.active) return { cls:"future", glyph:"&ndash;", tip:"Not started" };
+  if(kind === "tt"){
+    if(u.tt === null) return { cls:"na", glyph:"&mdash;", tip:"Test Talk not tracked for this unit" };
+    if(u.tt === true) return { cls:"done", glyph:"&#10003;", tip:"Test Talk complete" };
+    if(u.date && daysUntil(u.date) < 0) return { cls:"over", glyph:"!", tip:"Test Talk overdue (unit administered " + fmtShort(u.date) + ")" };
+    return { cls:"future", glyph:"&ndash;", tip:"Test Talk due after the unit assessment is administered" };
+  }
+  var done = kind === "ua" ? u.assess : u.plan;
+  var name = kind === "ua" ? "Assessment" : "Plan";
+  if(done) return { cls:"done", glyph:"&#10003;", tip:name + " submitted" };
+  if(u.date){
+    var d = daysUntil(u.date);
+    if(d < 0) return { cls:"over", glyph:"!", tip:name + " overdue (test date " + fmtShort(u.date) + ")" };
+    if(d <= GRID_DUE_SOON_DAYS) return { cls:"soon", glyph:"!", tip:name + " due in " + d + " day" + (d === 1 ? "" : "s") };
+  }
+  return { cls:"future", glyph:"&ndash;", tip:name + " not yet submitted" };
+}
+
+/* teacher-level "Ahead of Pace" alert */
+function teacherAlert(r){
+  var over = [], soon = [];
+  r.units.forEach(function(u){
+    if(!u.active || !u.date) return;
+    var d = daysUntil(u.date);
+    if(!u.assess){
+      if(d < 0) over.push("Unit " + u.n + " Assessment overdue");
+      else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Assessment due in " + d + " day" + (d === 1 ? "" : "s"));
+    }
+    if(!u.plan){
+      if(d < 0) over.push("Unit " + u.n + " Plan overdue");
+      else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Plan due soon");
+    }
+    if(u.tt === false && d < 0) over.push("Unit " + u.n + " Test Talk overdue");
+  });
+  var all = over.concat(soon).join(" · ");
+  if(over.length > 1) return { cls:"bad",  txt:"&#9888; Multiple items overdue", tip:all };
+  if(over.length === 1) return { cls:"bad",  txt:"&#9888; " + esc(over[0]), tip:all };
+  if(soon.length > 1) return { cls:"warn", txt:"&#9719; Multiple items due soon", tip:all };
+  if(soon.length === 1) return { cls:"warn", txt:"&#9719; " + esc(soon[0]), tip:all };
+  return { cls:"ok", txt:"&#10003; On track", tip:"" };
+}
+
+function gradeOf(r){
+  var m = String(r.label).match(/(K|\d+)\s*(?:st|nd|rd|th)?\s*(?:Grade)?\s*$/i);
+  return m ? m[1].toUpperCase() : "";
+}
+function gridRows(){
   var q = state.search.toLowerCase();
+  return scopeRows().filter(function(r){
+    if(state.gSubject !== "all" && r.subject !== state.gSubject) return false;
+    if(state.gGrade !== "all" && gradeOf(r) !== state.gGrade) return false;
+    if(state.gStatus !== "all" && rowAgg(r).worst !== state.gStatus) return false;
+    if(q && (r.label + " " + r.subject + " " + r.sub).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+}
+function uniq(arr){
+  var seen = {}, out = [];
+  arr.forEach(function(v){ if(v && !seen[v]){ seen[v] = 1; out.push(v); } });
+  return out.sort();
+}
+
+function viewUnits(){
+  var head = '<div class="section"><div class="section-title">Unit Progress by Teacher</div>' + gridBar();
+  var body = state.unitsMode === "grid" ? unitGrid() : unitList();
+  var cards = state.unitsMode === "grid" ? gridCards() : '';
+  return head + body + '</div>' + cards
+    + '<div class="banner">A missing unit assessment is not a paperwork problem. It signals that instruction may be planned without a clear picture of where students need to arrive. Both the plan <b>and</b> the assessment must be present before instruction begins. The assessment date is the trigger for the next unit.</div>';
+}
+
+function gridBar(){
+  var rows = scopeRows();
+  var subjects = uniq(rows.map(function(r){ return r.subject; }));
+  var grades = uniq(rows.map(gradeOf));
+  var h = '<div class="gridbar">';
+  h += '<select id="gSubject"><option value="all">All Subjects</option>'
+    + subjects.map(function(s){ return '<option value="' + esc(s) + '"' + (state.gSubject === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('')
+    + '</select>';
+  h += '<select id="gGrade"><option value="all">All Grade Levels</option>'
+    + grades.map(function(g){ return '<option value="' + esc(g) + '"' + (state.gGrade === g ? ' selected' : '') + '>Grade ' + esc(g) + '</option>'; }).join('')
+    + '</select>';
+  h += '<select id="gStatus">'
+    + '<option value="all">All Statuses</option>'
+    + '<option value="ok"'   + (state.gStatus === "ok"   ? ' selected' : '') + '>On Track</option>'
+    + '<option value="warn"' + (state.gStatus === "warn" ? ' selected' : '') + '>Needs Attention</option>'
+    + '<option value="bad"'  + (state.gStatus === "bad"  ? ' selected' : '') + '>Behind</option>'
+    + '</select>';
+  h += '<div class="legend">'
+    + '<span><i class="dot ok"></i>Completed</span>'
+    + '<span><i class="dot warn"></i>Due Soon (' + GRID_DUE_SOON_DAYS + ' Days)</span>'
+    + '<span><i class="dot bad"></i>Overdue</span>'
+    + '<span><i class="dot none"></i>Not Started</span>'
+    + '<span>&#128197; Assessment Date (Trigger for Next Unit)</span>'
+    + '</div>';
+  h += '<div class="right">'
+    + '<button id="modeGrid" class="' + (state.unitsMode === "grid" ? 'active' : '') + '">&#9638; Grid View</button>'
+    + '<button id="modeList" class="' + (state.unitsMode === "list" ? 'active' : '') + '">&#9776; List View</button>'
+    + '<button id="exportBtn">&#8681; Export</button>'
+    + '</div></div>';
+  return h;
+}
+
+function unitGrid(){
+  var rows = gridRows();
+  var maxU = 0;
+  rows.forEach(function(r){ if(r.units.length > maxU) maxU = r.units.length; });
+  if(!rows.length || !maxU){
+    return '<div class="table-shell"><table><tbody><tr><td class="empty-note" style="padding:18px">Nothing matches the current filters.</td></tr></tbody></table></div>';
+  }
+
+  /* unit header windows derived from teacher test dates in scope:
+     window = earliest-to-latest test date for that unit number,
+     assessment due = latest date. There is no district pacing
+     calendar in the workbook, so this is inferred, not fixed.   */
+  var winByUnit = [];
+  for(var i = 0; i < maxU; i++){
+    var dates = [];
+    rows.forEach(function(r){
+      var u = r.units[i];
+      if(u && u.active && u.date) dates.push(u.date);
+    });
+    dates.sort(function(a,b){ return a - b; });
+    winByUnit.push(dates.length ? { lo:dates[0], hi:dates[dates.length-1] } : null);
+  }
+
+  var showSchool = state.school === "DISTRICT";
+  var html = '<div class="table-shell"><table class="upg"><thead><tr>'
+    + '<th class="th-teacher" rowspan="2">Teacher</th>';
+  for(var n = 0; n < maxU; n++){
+    var w = winByUnit[n];
+    html += '<th class="unit-head" colspan="3">Unit ' + (n+1)
+      + (w ? '<span class="uh-win">' + fmtShort(w.lo) + ' &ndash; ' + fmtShort(w.hi) + '</span><span class="uh-due">Assessment Due: ' + fmtShort(w.hi) + '</span>'
+           : '<span class="uh-win">&mdash;</span>')
+      + '</th>';
+  }
+  html += '<th class="th-alert" rowspan="2">Ahead of Pace Alerts</th></tr><tr class="subhead">';
+  for(n = 0; n < maxU; n++){
+    html += '<th class="first-of-unit" title="Unit Assessment (due date triggers next unit)">UA</th>'
+      + '<th title="Unit Plan with SDI">UP (SDI)</th>'
+      + '<th title="Completed Test Talk">TT</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(function(r){
+    var al = teacherAlert(r);
+    html += '<tr><td class="cell-teacher"><span class="cell-name">' + esc(r.label) + '</span>'
+      + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span></td>';
+    for(var i = 0; i < maxU; i++){
+      var u = r.units[i];
+      if(!u){
+        html += '<td class="icell first-of-unit"><span class="st na">&mdash;</span></td>'
+          + '<td class="icell"><span class="st na">&mdash;</span></td>'
+          + '<td class="icell"><span class="st na">&mdash;</span></td>';
+        continue;
+      }
+      var ua = itemState(u, "ua"), up = itemState(u, "up"), tt = itemState(u, "tt");
+      html += '<td class="icell first-of-unit" title="' + esc(ua.tip) + '"><span class="st ' + ua.cls + '">' + ua.glyph + '</span>'
+        + (u.date ? '<span class="idate">' + fmtShort(u.date) + '</span>' : '<span class="idate">&mdash;</span>') + '</td>';
+      html += '<td class="icell" title="' + esc(up.tip) + '"><span class="st ' + up.cls + '">' + up.glyph + '</span><span class="idate">&nbsp;</span></td>';
+      html += '<td class="icell" title="' + esc(tt.tip) + '"><span class="st ' + tt.cls + '">' + tt.glyph + '</span><span class="idate">&nbsp;</span></td>';
+    }
+    html += '<td class="alert-td"><span class="alert ' + al.cls + '"' + (al.tip ? ' title="' + esc(al.tip) + '"' : '') + '>' + al.txt + '</span></td></tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function gridCards(){
+  var rows = gridRows();
+  var units = collectUnits(rows);
+  var over = 0, soon = 0, ok = 0;
+  units.forEach(function(x){
+    var ttOver = x.u.tt === false && x.u.date && daysUntil(x.u.date) < 0;
+    var missing = !(x.u.plan && x.u.assess);
+    var d = x.u.date ? daysUntil(x.u.date) : null;
+    if((missing && d !== null && d < 0) || ttOver) over++;
+    else if(missing && d !== null && d <= GRID_DUE_SOON_DAYS) soon++;
+    else ok++;
+  });
+  var upcoming = units.filter(function(x){ return x.u.date && daysUntil(x.u.date) >= 0; })
+    .sort(function(a,b){ return a.u.date - b.u.date; }).slice(0, 5);
+
+  var html = '<div class="cards-row">';
+  html += '<div class="panel"><h3>How to Read This Grid</h3><ul class="keylist">'
+    + '<li><b>UA</b> = Unit Assessment (due date triggers next unit)</li>'
+    + '<li><b>UP (SDI)</b> = Unit Plan with SDI</li>'
+    + '<li><b>TT</b> = Completed Test Talk</li></ul>'
+    + '<p>The assessment due date is the trigger to begin the next unit. The date shown under each UA icon is that unit\u2019s test date from the curriculum map.</p></div>';
+  html += '<div class="panel"><h3>Teacher Summary</h3><div class="mini-stats">'
+    + '<div class="ms"><div class="v gold">' + rows.length + '</div><div class="l">Total Teachers</div></div>'
+    + '<div class="ms"><div class="v gold">' + units.length + '</div><div class="l">Units Assigned</div></div>'
+    + '<div class="ms"><div class="v ok">' + ok + '</div><div class="l">Units On Track (' + pct(ok, units.length) + '%)</div></div>'
+    + '<div class="ms"><div class="v warn">' + soon + '</div><div class="l">Units Due Soon (' + pct(soon, units.length) + '%)</div></div>'
+    + '<div class="ms"><div class="v bad">' + over + '</div><div class="l">Units Overdue (' + pct(over, units.length) + '%)</div></div>'
+    + '</div></div>';
+  html += '<div class="panel"><h3>Upcoming Unit Assessments</h3>';
+  if(!upcoming.length) html += '<div class="empty-note">No upcoming test dates on the calendar.</div>';
+  else{
+    html += '<ul class="uplist">';
+    upcoming.forEach(function(x){
+      html += '<li><span><b>' + esc(x.row.label) + '</b> &ndash; Unit ' + x.u.n + ' ' + esc(x.row.subject) + '</span><span class="d">' + fmtLong(x.u.date) + '</span></li>';
+    });
+    html += '</ul>';
+  }
+  html += '<button class="linkish" id="viewAllUpcoming">View All Upcoming</button></div>';
+  html += '<div class="panel"><h3>Filters &amp; Tips</h3><ul class="tiplist">'
+    + '<li>&#9432; Use filters to view by subject, grade level, or status.</li>'
+    + '<li>&#9432; Hover over icons for more details.</li>'
+    + '<li>&#9432; Switch to List View for a sortable line-by-line breakdown.</li>'
+    + '<li class="tip-gold">&#128161; Tip: Focus on assessment dates &ndash; they trigger the next unit.</li>'
+    + '</ul></div>';
+  html += '</div>';
+  return html;
+}
+
+/* the original units table lives on as List View */
+function unitList(){
+  var units = collectUnits(gridRows());
   var showSchool = state.school === "DISTRICT";
   var html = toolbarHtml(["all","incomplete","ready"], {all:"All", incomplete:"Incomplete", ready:"Ready"});
   html += '<div class="table-shell"><table><thead><tr>'
@@ -572,7 +898,6 @@ function viewUnits(){
   units.forEach(function(x){
     if(state.filter === "incomplete" && x.s.complete) return;
     if(state.filter === "ready" && !x.s.complete) return;
-    if(q && (x.row.label + " " + x.row.subject).toLowerCase().indexOf(q) === -1) return;
     shown++;
     html += '<tr>'
       + (showSchool ? '<td class="cell-sub">' + esc(x.row.school) + '</td>' : '')
@@ -585,8 +910,43 @@ function viewUnits(){
   });
   if(!shown) html += '<tr><td colspan="7" class="empty-note" style="padding:18px">Nothing matches.</td></tr>';
   html += '</tbody></table></div>';
-  return '<div class="section"><div class="section-title">Units</div>' + html + '</div>'
-    + '<div class="banner">A missing unit assessment is not a paperwork problem. It signals that instruction may be planned without a clear picture of where students need to arrive. Both the plan <b>and</b> the assessment must be present before instruction begins.</div>';
+  return html;
+}
+
+/* CSV export of whatever the grid filters currently show */
+function exportGrid(){
+  var rows = gridRows();
+  var maxU = 0;
+  rows.forEach(function(r){ if(r.units.length > maxU) maxU = r.units.length; });
+  var stTxt = { done:"Submitted", soon:"Due Soon", over:"Overdue", future:"Not Started", na:"Not Tracked" };
+  var head = ["Teacher","School","Subject","Grade"];
+  for(var n = 1; n <= maxU; n++){
+    head.push("Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
+  }
+  head.push("Alert");
+  var lines = [head.join(",")];
+  rows.forEach(function(r){
+    var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r)];
+    for(var i = 0; i < maxU; i++){
+      var u = r.units[i];
+      if(!u){ cells.push("","","",""); continue; }
+      cells.push(u.date ? fmtDate(u.date) : "",
+        stTxt[itemState(u,"ua").cls], stTxt[itemState(u,"up").cls], stTxt[itemState(u,"tt").cls]);
+    }
+    var al = teacherAlert(r);
+    cells.push(csvCell(al.txt.replace(/&#\d+;\s*/g,"").replace(/&[a-z]+;/g," ")));
+    lines.push(cells.join(","));
+  });
+  var blob = new Blob([lines.join("\r\n")], { type:"text/csv" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "unit-progress-" + state.school.toLowerCase() + "-" + new Date().toISOString().slice(0,10) + ".csv";
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+function csvCell(s){
+  s = String(s);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
 }
 
 function viewAssessments(){
@@ -646,11 +1006,9 @@ function viewTestTalk(){
       + '<td>' + mark(x.u.tt === true) + '</td>'
       + '<td>' + (x.u.tt === true ? pill("ok","Complete") : pill("warn","Pending")) + '</td></tr>';
   });
-  if(!shown) html += '<tr><td colspan="6" class="empty-note" style="padding:18px">No administered units yet' + (state.school === "MCMS" ? ' (Test Talk is not tracked on the MCMS tab of the workbook yet)' : '') + '.</td></tr>';
+  if(!shown) html += '<tr><td colspan="6" class="empty-note" style="padding:18px">No administered units yet.</td></tr>';
   html += '</tbody></table></div>';
-  var note = state.school === "MCMS" || state.school === "DISTRICT"
-    ? '<div class="banner"><b>Note:</b> the MCMS tab of the curriculum map workbook does not have a Test Talk column yet, so MCMS units cannot appear here until one is added.</div>' : '';
-  return '<div class="section"><div class="section-title">Test Talk</div>' + html + '</div>' + note;
+  return '<div class="section"><div class="section-title">Test Talk</div>' + html + '</div>';
 }
 
 /* ---------------- toolbar / events ---------------- */
@@ -675,10 +1033,33 @@ function bindToolbar(){
       if(s2){ s2.focus(); s2.setSelectionRange(s2.value.length, s2.value.length); }
     });
   }
+  /* unit progress grid controls */
+  bindSel("gSubject", "gSubject");
+  bindSel("gGrade", "gGrade");
+  bindSel("gStatus", "gStatus");
+  bindBtn("modeGrid", function(){ state.unitsMode = "grid"; draw(); });
+  bindBtn("modeList", function(){ state.unitsMode = "list"; state.filter = "all"; draw(); });
+  bindBtn("exportBtn", exportGrid);
+  bindBtn("viewAllUpcoming", function(){
+    state.view = "assessments"; state.filter = "all"; state.search = "";
+    document.querySelectorAll("#viewtabs button").forEach(function(x){
+      x.classList.toggle("active", x.getAttribute("data-view") === "assessments");
+    });
+    draw();
+  });
+}
+function bindSel(id, key){
+  var el = document.getElementById(id);
+  if(el) el.addEventListener("change", function(){ state[key] = el.value; draw(); });
+}
+function bindBtn(id, fn){
+  var el = document.getElementById(id);
+  if(el) el.addEventListener("click", fn);
 }
 document.getElementById("selector").addEventListener("click", function(e){
   var b = e.target.closest("button"); if(!b) return;
   state.school = b.getAttribute("data-school");
+  state.gSubject = "all"; state.gGrade = "all"; state.gStatus = "all";
   document.querySelectorAll("#selector button").forEach(function(x){ x.classList.toggle("active", x === b); });
   draw();
 });
@@ -686,6 +1067,7 @@ document.getElementById("viewtabs").addEventListener("click", function(e){
   var b = e.target.closest("button"); if(!b) return;
   state.view = b.getAttribute("data-view");
   state.filter = "all"; state.search = "";
+  state.gSubject = "all"; state.gGrade = "all"; state.gStatus = "all";
   document.querySelectorAll("#viewtabs button").forEach(function(x){ x.classList.toggle("active", x === b); });
   draw();
 });
@@ -709,10 +1091,10 @@ function loadSample(){
   var d = function(off){ var t = new Date(); t.setDate(t.getDate() + off); return (t.getMonth()+1) + "/" + t.getDate() + "/" + t.getFullYear(); };
   RAW = {
     MCMS: [
-      { subject:"ELA", teacherGrade:"Mrs. Way - 6", units:[{plan:"x",date:d(-20),test:"x"},{plan:"x",date:d(5),test:"x"},{plan:"x",date:d(40),test:""},{plan:"",date:"",test:""}] },
-      { subject:"Reading", teacherGrade:"Mrs. Reece - 6", units:[{plan:"x",date:d(-15),test:"x"},{plan:"x",date:d(8),test:""},{plan:"",date:d(45),test:""}] },
-      { subject:"Math", teacherGrade:"Mr. Boone - 7", units:[{plan:"x",date:d(-10),test:"x"},{plan:"x",date:d(12),test:"x"},{plan:"x",date:d(50),test:""}] },
-      { subject:"Science", teacherGrade:"Ms. Lee - 8", units:[{plan:"x",date:d(-30),test:"x"},{plan:"",date:d(-2),test:""},{plan:"x",date:d(30),test:"x"}] }
+      { subject:"ELA", teacherGrade:"Mrs. Way - 6", units:[{plan:"x",date:d(-20),test:"x",testTalk:true},{plan:"x",date:d(5),test:"x",testTalk:false},{plan:"x",date:d(40),test:"",testTalk:false},{plan:"",date:"",test:"",testTalk:false}] },
+      { subject:"Reading", teacherGrade:"Mrs. Reece - 6", units:[{plan:"x",date:d(-15),test:"x",testTalk:false},{plan:"x",date:d(8),test:"",testTalk:false},{plan:"",date:d(45),test:"",testTalk:false}] },
+      { subject:"Math", teacherGrade:"Mr. Boone - 7", units:[{plan:"x",date:d(-10),test:"x",testTalk:true},{plan:"x",date:d(12),test:"x",testTalk:false},{plan:"x",date:d(50),test:"",testTalk:false}] },
+      { subject:"Science", teacherGrade:"Ms. Lee - 8", units:[{plan:"x",date:d(-30),test:"x",testTalk:true},{plan:"",date:d(-2),test:"",testTalk:false},{plan:"x",date:d(30),test:"x",testTalk:false}] }
     ],
     TGE: [
       { subject:"ELA", grade:"Kindergarten", units:[{test:"x",date:d(-12),shared:"x",bwd:"x",testTalk:true},{test:"x",date:d(10),shared:"x",bwd:"",testTalk:false}] },
