@@ -953,7 +953,7 @@ function exportGrid(){
   var lines = [head.join(",")];
   rows.forEach(function(r){
     var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
-      filled(r.map) ? csvCell(r.mapUrl || String(r.map)) : "Not Submitted"];
+      filled(r.map) ? (r.mapUrl ? csvCell(r.mapUrl) : (r.map === true ? "Submitted" : csvCell(String(r.map)))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){ cells.push("","","","","",""); continue; }
