@@ -677,7 +677,7 @@ function teacherTable(rows, compact){
       + (showSchool ? '<td class="cell-sub">' + esc(r.school) + '</td>' : '')
       + '<td class="cell-name">' + esc(r.label) + (r.sub ? ' <span class="cell-sub">&middot; ' + esc(r.sub) + '</span>' : '') + '</td>'
       + '<td class="cell-sub">' + esc(r.subject) + '</td>'
-      + '<td class="num" title="' + (r.school === "MCA" ? 'Curriculum Map not tracked for MCA (column B is the course)' : 'Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted')) + '">' + (r.school === "MCA" ? '<span class="mark-none">&mdash;</span>' : mark(filled(r.map))) + '</td>'
+      + '<td class="num" title="Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted') + '">' + mark(filled(r.map)) + '</td>'
       + '<td class="num">' + a.plans + ' / ' + a.active + '</td>'
       + '<td class="num">' + a.assess + ' / ' + a.active + '</td>'
       + '<td class="num">' + (a.ttTracked ? a.ttDone + ' / ' + a.ttDue : '<span class="mark-none">&mdash;</span>') + '</td>'
@@ -831,7 +831,7 @@ function unitGrid(){
     var al = teacherAlert(r);
     html += '<tr><td class="cell-teacher"><span class="cell-name">' + esc(r.label) + '</span>'
       + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span>'
-      + (r.school === "MCA" ? '' : '<br><span class="cell-sub">Curriculum Map: ' + mark(filled(r.map)) + '</span>') + '</td>';
+      + '<br><span class="cell-sub">Curriculum Map: ' + mark(filled(r.map)) + '</span></td>';
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){
@@ -944,7 +944,7 @@ function exportGrid(){
   var lines = [head.join(",")];
   rows.forEach(function(r){
     var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
-      r.school === "MCA" ? "n/a" : (filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted")];
+      filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){ cells.push("","","","","",""); continue; }
