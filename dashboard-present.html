@@ -426,11 +426,21 @@ function parseDate(s){
     var mo = +m[1]-1;
     return new Date(mo >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1, mo, +m[2]);
   }
-  var key = s.slice(0,4).toLowerCase().replace(/[^a-z]/g,"").slice(0,4);
-  for(var k in MONTHS){
-    if(key.indexOf(k) === 0){
-      var mo2 = MONTHS[k];
-      return new Date(mo2 >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1, mo2, 15);
+  /* month name, optional day, optional year: "Sept. 25", "Sep 25, 2026",
+     "September". Reads the real day when present (falls back to the 15th
+     only when no day is written); "No Test", "TBD", etc. fall through. */
+  var mn = s.match(/^([A-Za-z]{3,})\.?\s*(\d{1,2})?(?:[,\s]+(\d{2,4}))?/);
+  if(mn){
+    var key = mn[1].toLowerCase().replace(/[^a-z]/g,"").slice(0,4);
+    for(var k in MONTHS){
+      if(key.indexOf(k) === 0){
+        var mo2 = MONTHS[k];
+        var day = mn[2] ? +mn[2] : 15;
+        var yr = mn[3] ? (+mn[3] < 100 ? +mn[3]+2000 : +mn[3])
+                       : (mo2 >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1);
+        var dd = new Date(yr, mo2, day);
+        return isNaN(dd) ? null : dd;
+      }
     }
   }
   var d2 = new Date(s);
