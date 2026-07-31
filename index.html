@@ -456,7 +456,7 @@ function normalize(schools){
   (schools.MCA || []).forEach(function(t){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
-      sub:"", map:t.curriculumMap,
+      sub:(typeof t.curriculumMap === "string" ? t.curriculumMap : ""), map:t.curriculumMap,
       units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk)); })
     });
   });

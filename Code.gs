@@ -19,18 +19,17 @@
 // CHANGES IN THIS VERSION (July 2026), re-validated against the
 // live 26-27 workbook header rows, column by column:
 //
-//   1. SUBJECT HEADERS are detected by BOTH shape and formatting:
-//      a row is a subject band only when column A is the ONLY cell
-//      with content (a sparse row) AND the row is bold or shaded.
-//      - Requiring "sparse" stops shaded DATA rows (e.g. TGE, where
-//        the whole grid is colored) from being mistaken for headers.
-//      - Requiring "bold/shaded" stops a teacher who simply has not
-//        entered unit data yet (just a name in col A) from being
-//        mistaken for a header and dropped, which also used to pin
-//        that teacher's name onto everyone below as a bogus subject
-//        and scramble the row order.
-//      Read via getFontWeights()/getBackgrounds(). Run diagnose()
-//      to see exactly how each tab's rows are shaped and formatted.
+//   1. SUBJECT BANDS are detected by the COLORED FILL in column A.
+//      Every teacher row has a white column A; only the subject
+//      bands (ELA, Math, Science, ...) are filled with a color. This
+//      is the workbook's consistent convention on all three tabs.
+//      The earlier rules failed on the live data: "only column A
+//      has text" dropped teachers who had no data yet and pinned
+//      their name onto everyone below as a bogus subject; "bold or
+//      any shaded cell" wiped out all of TGE (its whole grid is
+//      colored) and dropped MCMS teachers with a stray shaded cell.
+//      Read via getBackgrounds(). Run diagnose() to see the fill of
+//      every row per tab.
 //
 //   2. CURRICULUM MAP COLUMN is now read and emitted for all
 //      three schools:
@@ -46,10 +45,10 @@
 //      3 wide, so Units 6-13 were read from the wrong columns and
 //      Units 11-13 were dropped entirely.
 //
-//   4. MCMS NO LONGER READS A SUBJECT COLUMN. The MCMS tab has no
-//      subject column (col B is Curriculum Map). Subjects, if the
-//      tab uses them, are bold/shaded header rows in column A,
-//      handled the same way as MCA and TGE.
+//   4. MCMS SUBJECT BANDS live in column B with column A blank
+//      (e.g. A "" | B "ELA"), so subjectLabel() reads the band's
+//      label from column A, or column B when A is empty. Column B on
+//      a teacher row is that teacher's Curriculum Map, not a subject.
 //
 //   (MCA Unit 7's Shared?/Test Talk? swap and the 11-unit MCA
 //    layout are real in the sheet and are intentionally kept.)
@@ -137,9 +136,9 @@ function buildPayload() {
 
 // ---- READERS ----
 // Each reader pulls values plus formatting once, walks the rows
-// top-to-bottom (preserving sheet order), skips blank/header
-// rows, treats bold-or-shaded rows as subject headers, and emits
-// every remaining teacher row.
+// top-to-bottom (preserving sheet order), skips blank/title rows,
+// treats color-filled rows as subject bands, and emits every
+// remaining teacher row.
 
 function readMCA(sheet, tz) {
   var m = sheetMatrix(sheet);
@@ -148,7 +147,7 @@ function readMCA(sheet, tz) {
     var row = m.values[r];
     if (blankRow(row)) continue;
     if (isHeaderRow(row, tz)) continue;          // MCA header sits on sheet row 3
-    if (isSubjectHeader(m, r, tz)) { subject = norm(row[0], tz); continue; }
+    if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
     var units = MCA_UNITS.map(function (u) {
       return {
@@ -175,7 +174,7 @@ function readTGE(sheet, tz) {
     var row = m.values[r];
     if (blankRow(row)) continue;
     if (isHeaderRow(row, tz)) continue;
-    if (isSubjectHeader(m, r, tz)) { subject = norm(row[0], tz); continue; }
+    if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
     var units = TGE_UNITS.map(function (u) {
       return {
@@ -203,7 +202,7 @@ function readMCMS(sheet, tz) {
     var row = m.values[r];
     if (blankRow(row)) continue;
     if (isHeaderRow(row, tz)) continue;
-    if (isSubjectHeader(m, r, tz)) { subject = norm(row[0], tz); continue; }
+    if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
     var units = MCMS_UNITS.map(function (u) {
       return {
@@ -260,40 +259,44 @@ function isHeaderRow(row, tz) {
   return norm(row[0], tz) === 'Teacher/Grade';
 }
 
-// A subject band is a row where column A is the only cell with
-// content AND the row is bold or shaded. Both signals are required:
-// "sparse" alone would drop teachers who have not entered data yet;
-// "formatted" alone would swallow shaded data rows (TGE colors its
-// whole grid). Together they isolate the subject bands (ELA, Math).
+// Subject bands are the ONLY rows with a colored fill in column A;
+// every teacher row has a white column A. This is the workbook's
+// consistent visual convention across all three tabs, confirmed by
+// diagnose():
+//   - MCA/TGE put the subject label in column A (colored fill).
+//   - MCMS leaves column A blank and puts the subject in column B,
+//     but the band's column A is still colored.
+// (The "Teacher/Grade" title row is also colored but is filtered
+// earlier by isHeaderRow.) Detecting bands by fill color instead of
+// "sparse + bold" avoids two failures seen in the live data: TGE
+// teacher rows are bold (so bold cannot mark a band), and some
+// teacher rows carry a stray shaded cell (so "any shaded cell in the
+// row" wrongly dropped teachers such as MCMS Way-7 and Teschendorf-6
+// who simply had no data entered yet).
 function isSubjectHeader(m, r, tz) {
-  var row = m.values[r];
-  if (norm(row[0], tz) === '') return false;   // no label in col A -> not a header
-  if (!onlyFirstColFilled(row)) return false;  // real data elsewhere -> a teacher row
-  return rowIsBoldOrShaded(m, r);
+  return isColoredFill(m.backgrounds[r][0]);
 }
 
-// True when only column A holds real content (every other cell is
-// empty or an unchecked checkbox).
+// Subject label for a band: MCA/TGE hold it in column A; MCMS leaves
+// column A blank and holds the subject in column B.
+function subjectLabel(row, tz) {
+  var a = norm(row[0], tz);
+  return a !== '' ? a : norm(row[1], tz);
+}
+
+function isColoredFill(bg) {
+  if (!bg) return false;
+  var s = String(bg).toLowerCase();
+  return s !== '' && s !== '#ffffff' && s !== 'white' && s !== '#fff';
+}
+
+// True when only column A holds real content (used by diagnose()).
 function onlyFirstColFilled(row) {
   for (var j = 1; j < row.length; j++) {
     var c = row[j];
     if (c !== '' && c !== null && c !== undefined && c !== false) return false;
   }
   return true;
-}
-
-function rowIsBoldOrShaded(m, r) {
-  var w = m.weights[r], b = m.backgrounds[r], j;
-  for (j = 0; j < w.length; j++) {
-    if (w[j] === 'bold') return true;
-  }
-  for (j = 0; j < b.length; j++) {
-    var c = b[j];
-    if (!c) continue;
-    var s = String(c).toLowerCase();
-    if (s !== '' && s !== '#ffffff' && s !== 'white' && s !== '#fff') return true;
-  }
-  return false;
 }
 
 function blankRow(row) {
