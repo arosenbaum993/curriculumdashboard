@@ -231,6 +231,7 @@ tr.subject-row td{
 .st.future{background:transparent;color:var(--none);border:1px solid var(--line)}
 .st.na{color:var(--none);border:none;background:transparent}
 .icell .idate{display:block;font-size:.7rem;color:var(--muted);margin-top:3px;white-space:nowrap}
+.icell .urun{display:block;font-size:.66rem;color:var(--gold-soft);margin-top:2px;white-space:nowrap}
 
 .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;align-items:start}
 .cards-row .panel{padding:16px 18px;font-size:.9rem}
@@ -442,38 +443,47 @@ function ttVal(v){
   if(v === null || v === undefined) return null;   /* not tracked */
   return filled(v);
 }
-function mkUnit(n, plan, assess, dateStr, tt){
+function mkUnit(n, plan, assess, dateStr, tt, startStr, endStr){
   var date = parseDate(dateStr);
+  var start = parseDate(startStr), end = parseDate(endStr);
   var p = filled(plan), a = filled(assess);
   return {
     n:n, plan:p, assess:a, date:date, dateStr:dateStr || "",
+    start:start, startStr:startStr || "", end:end, endStr:endStr || "",
     tt:(tt === true || tt === false) ? tt : null,
-    active:(p || a || !!date)
+    active:(p || a || !!date || !!start || !!end)
   };
+}
+/* run window (when the unit is taught), shown per teacher per unit */
+function unitRunText(u){
+  if(u.start && u.end) return fmtShort(u.start) + " &ndash; " + fmtShort(u.end);
+  if(u.start) return "from " + fmtShort(u.start);
+  if(u.end)   return "thru " + fmtShort(u.end);
+  return "";
 }
 function normalize(schools){
   var rows = [];
   (schools.MCA || []).forEach(function(t){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
-      sub:t.course || "",
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk)); })
+      sub:(typeof t.curriculumMap === "string" ? t.curriculumMap : ""), map:t.curriculumMap,
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.TGE || []).forEach(function(t){
     rows.push({
-      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"",
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk)); })
+      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"", map:t.curriculumMap,
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.MCMS || []).forEach(function(t){
     rows.push({
-      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"",
+      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"", map:t.curriculumMap,
       units:(t.units || []).map(function(u,i){
         /* Test Talk column added to the MCMS tab; if the Apps Script
            payload does not include u.testTalk yet, this stays null
            and the grid shows a dash until the script is redeployed. */
-        return mkUnit(i+1, u.plan, u.test, u.date, "testTalk" in u ? ttVal(u.testTalk) : null);
+        return mkUnit(i+1, u.plan, u.test, u.date, "testTalk" in u ? ttVal(u.testTalk) : null, u.start, u.end);
       })
     });
   });
@@ -637,7 +647,7 @@ function teacherTable(rows, compact){
   var showSchool = state.school === "DISTRICT";
   var html = '<div class="table-shell"><table><thead><tr>'
     + (showSchool ? '<th>School</th>' : '')
-    + '<th>Teacher / Grade</th><th>Subject</th><th>Plans</th><th>Assessments</th><th>Test Talk</th><th>Status</th><th>Next Test Date</th></tr></thead><tbody>';
+    + '<th>Teacher / Grade</th><th>Subject</th><th>Curr. Map</th><th>Plans</th><th>Assessments</th><th>Test Talk</th><th>Status</th><th>Next Test Date</th></tr></thead><tbody>';
   var shown = 0;
   rows.forEach(function(r){
     var a = rowAgg(r);
@@ -648,13 +658,14 @@ function teacherTable(rows, compact){
       + (showSchool ? '<td class="cell-sub">' + esc(r.school) + '</td>' : '')
       + '<td class="cell-name">' + esc(r.label) + (r.sub ? ' <span class="cell-sub">&middot; ' + esc(r.sub) + '</span>' : '') + '</td>'
       + '<td class="cell-sub">' + esc(r.subject) + '</td>'
+      + '<td class="num" title="Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted') + '">' + mark(filled(r.map)) + '</td>'
       + '<td class="num">' + a.plans + ' / ' + a.active + '</td>'
       + '<td class="num">' + a.assess + ' / ' + a.active + '</td>'
       + '<td class="num">' + (a.ttTracked ? a.ttDone + ' / ' + a.ttDue : '<span class="mark-none">&mdash;</span>') + '</td>'
       + '<td>' + statusPill(a.worst) + '</td>'
       + '<td class="num">' + (a.next ? fmtDate(a.next) : '<span class="cell-sub">&mdash;</span>') + '</td></tr>';
   });
-  if(!shown) html += '<tr><td colspan="8" class="empty-note" style="padding:18px">Nothing matches.</td></tr>';
+  if(!shown) html += '<tr><td colspan="9" class="empty-note" style="padding:18px">Nothing matches.</td></tr>';
   html += '</tbody></table></div>';
   return (compact ? '' : toolbarHtml(["all","flagged"], {all:"All", flagged:"Needs attention"})) + html;
 }
@@ -765,6 +776,7 @@ function gridBar(){
     + '<span><i class="dot bad"></i>Overdue</span>'
     + '<span><i class="dot none"></i>Not Started</span>'
     + '<span>&#128197; Assessment Date (Trigger for Next Unit)</span>'
+    + '<span style="color:var(--gold-soft)">Unit Run Dates (when taught)</span>'
     + '</div>';
   h += '<div class="right">'
     + '<button id="modeGrid" class="' + (state.unitsMode === "grid" ? 'active' : '') + '">&#9638; Grid View</button>'
@@ -782,30 +794,11 @@ function unitGrid(){
     return '<div class="table-shell"><table><tbody><tr><td class="empty-note" style="padding:18px">Nothing matches the current filters.</td></tr></tbody></table></div>';
   }
 
-  /* unit header windows derived from teacher test dates in scope:
-     window = earliest-to-latest test date for that unit number,
-     assessment due = latest date. There is no district pacing
-     calendar in the workbook, so this is inferred, not fixed.   */
-  var winByUnit = [];
-  for(var i = 0; i < maxU; i++){
-    var dates = [];
-    rows.forEach(function(r){
-      var u = r.units[i];
-      if(u && u.active && u.date) dates.push(u.date);
-    });
-    dates.sort(function(a,b){ return a - b; });
-    winByUnit.push(dates.length ? { lo:dates[0], hi:dates[dates.length-1] } : null);
-  }
-
   var showSchool = state.school === "DISTRICT";
   var html = '<div class="table-shell"><table class="upg"><thead><tr>'
     + '<th class="th-teacher" rowspan="2">Teacher</th>';
   for(var n = 0; n < maxU; n++){
-    var w = winByUnit[n];
-    html += '<th class="unit-head" colspan="3">Unit ' + (n+1)
-      + (w ? '<span class="uh-win">' + fmtShort(w.lo) + ' &ndash; ' + fmtShort(w.hi) + '</span><span class="uh-due">Assessment Due: ' + fmtShort(w.hi) + '</span>'
-           : '<span class="uh-win">&mdash;</span>')
-      + '</th>';
+    html += '<th class="unit-head" colspan="3">Unit ' + (n+1) + '</th>';
   }
   html += '<th class="th-alert" rowspan="2">Ahead of Pace Alerts</th></tr><tr class="subhead">';
   for(n = 0; n < maxU; n++){
@@ -818,7 +811,8 @@ function unitGrid(){
   rows.forEach(function(r){
     var al = teacherAlert(r);
     html += '<tr><td class="cell-teacher"><span class="cell-name">' + esc(r.label) + '</span>'
-      + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span></td>';
+      + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span>'
+      + '<br><span class="cell-sub">Curriculum Map: ' + mark(filled(r.map)) + '</span></td>';
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){
@@ -828,8 +822,10 @@ function unitGrid(){
         continue;
       }
       var ua = itemState(u, "ua"), up = itemState(u, "up"), tt = itemState(u, "tt");
+      var runTxt = unitRunText(u);
       html += '<td class="icell first-of-unit" title="' + esc(ua.tip) + '"><span class="st ' + ua.cls + '">' + ua.glyph + '</span>'
-        + (u.date ? '<span class="idate">' + fmtShort(u.date) + '</span>' : '<span class="idate">&mdash;</span>') + '</td>';
+        + (u.date ? '<span class="idate">' + fmtShort(u.date) + '</span>' : '<span class="idate">&mdash;</span>')
+        + (runTxt ? '<span class="urun" title="Unit taught ' + esc(runTxt.replace("&ndash;","to")) + '">' + runTxt + '</span>' : '') + '</td>';
       html += '<td class="icell" title="' + esc(up.tip) + '"><span class="st ' + up.cls + '">' + up.glyph + '</span><span class="idate">&nbsp;</span></td>';
       html += '<td class="icell" title="' + esc(tt.tip) + '"><span class="st ' + tt.cls + '">' + tt.glyph + '</span><span class="idate">&nbsp;</span></td>';
     }
@@ -921,18 +917,20 @@ function exportGrid(){
   var maxU = 0;
   rows.forEach(function(r){ if(r.units.length > maxU) maxU = r.units.length; });
   var stTxt = { done:"Submitted", soon:"Due Soon", over:"Overdue", future:"Not Started", na:"Not Tracked" };
-  var head = ["Teacher","School","Subject","Grade"];
+  var head = ["Teacher","School","Subject","Grade","Curriculum Map"];
   for(var n = 1; n <= maxU; n++){
-    head.push("Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
+    head.push("Unit " + n + " Start", "Unit " + n + " End", "Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
   }
   head.push("Alert");
   var lines = [head.join(",")];
   rows.forEach(function(r){
-    var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r)];
+    var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
+      filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
-      if(!u){ cells.push("","","",""); continue; }
-      cells.push(u.date ? fmtDate(u.date) : "",
+      if(!u){ cells.push("","","","","",""); continue; }
+      cells.push(u.start ? fmtDate(u.start) : "", u.end ? fmtDate(u.end) : "",
+        u.date ? fmtDate(u.date) : "",
         stTxt[itemState(u,"ua").cls], stTxt[itemState(u,"up").cls], stTxt[itemState(u,"tt").cls]);
     }
     var al = teacherAlert(r);
