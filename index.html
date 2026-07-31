@@ -426,19 +426,28 @@ function parseDate(s){
     var mo = +m[1]-1;
     return new Date(mo >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1, mo, +m[2]);
   }
-  /* month name, optional day, optional year: "Sept. 25", "Sep 25, 2026",
-     "September". Reads the real day when present (falls back to the 15th
-     only when no day is written); "No Test", "TBD", etc. fall through. */
-  var mn = s.match(/^([A-Za-z]{3,})\.?\s*(\d{1,2})?(?:[,\s]+(\d{2,4}))?/);
+  /* month name with optional day and/or year, in the common forms:
+     "Sept. 25", "Sep 25, 2026", "September 2026", "September". Pull the
+     numbers out of the tail: a number with 3+ digits (or > 31) is the
+     year, a 1-2 digit number is the day. Missing day falls back to the
+     15th, missing year to the academic year. "No Test"/"TBD" fall
+     through to null. */
+  var mn = s.match(/^([A-Za-z]{3,})/);
   if(mn){
     var key = mn[1].toLowerCase().replace(/[^a-z]/g,"").slice(0,4);
     for(var k in MONTHS){
       if(key.indexOf(k) === 0){
         var mo2 = MONTHS[k];
-        var day = mn[2] ? +mn[2] : 15;
-        var yr = mn[3] ? (+mn[3] < 100 ? +mn[3]+2000 : +mn[3])
-                       : (mo2 >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1);
-        var dd = new Date(yr, mo2, day);
+        var nums = s.slice(mn[0].length).match(/\d+/g) || [];
+        var day = null, yr = null;
+        nums.forEach(function(n){
+          var v = +n;
+          if(n.length >= 3 || v > 31){ if(yr === null) yr = v; }
+          else if(day === null){ day = v; }
+        });
+        if(yr === null) yr = (mo2 >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1);
+        else if(yr < 100) yr += 2000;
+        var dd = new Date(yr, mo2, day === null ? 15 : day);
         return isNaN(dd) ? null : dd;
       }
     }
