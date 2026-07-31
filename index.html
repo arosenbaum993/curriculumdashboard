@@ -231,6 +231,7 @@ tr.subject-row td{
 .st.future{background:transparent;color:var(--none);border:1px solid var(--line)}
 .st.na{color:var(--none);border:none;background:transparent}
 .icell .idate{display:block;font-size:.7rem;color:var(--muted);margin-top:3px;white-space:nowrap}
+.icell .urun{display:block;font-size:.66rem;color:var(--gold-soft);margin-top:2px;white-space:nowrap}
 
 .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;align-items:start}
 .cards-row .panel{padding:16px 18px;font-size:.9rem}
@@ -442,14 +443,23 @@ function ttVal(v){
   if(v === null || v === undefined) return null;   /* not tracked */
   return filled(v);
 }
-function mkUnit(n, plan, assess, dateStr, tt){
+function mkUnit(n, plan, assess, dateStr, tt, startStr, endStr){
   var date = parseDate(dateStr);
+  var start = parseDate(startStr), end = parseDate(endStr);
   var p = filled(plan), a = filled(assess);
   return {
     n:n, plan:p, assess:a, date:date, dateStr:dateStr || "",
+    start:start, startStr:startStr || "", end:end, endStr:endStr || "",
     tt:(tt === true || tt === false) ? tt : null,
-    active:(p || a || !!date)
+    active:(p || a || !!date || !!start || !!end)
   };
+}
+/* run window (when the unit is taught), shown per teacher per unit */
+function unitRunText(u){
+  if(u.start && u.end) return fmtShort(u.start) + " &ndash; " + fmtShort(u.end);
+  if(u.start) return "from " + fmtShort(u.start);
+  if(u.end)   return "thru " + fmtShort(u.end);
+  return "";
 }
 function normalize(schools){
   var rows = [];
@@ -457,13 +467,13 @@ function normalize(schools){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
       sub:(typeof t.curriculumMap === "string" ? t.curriculumMap : ""), map:t.curriculumMap,
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk)); })
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.TGE || []).forEach(function(t){
     rows.push({
       school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"", map:t.curriculumMap,
-      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk)); })
+      units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.MCMS || []).forEach(function(t){
@@ -473,7 +483,7 @@ function normalize(schools){
         /* Test Talk column added to the MCMS tab; if the Apps Script
            payload does not include u.testTalk yet, this stays null
            and the grid shows a dash until the script is redeployed. */
-        return mkUnit(i+1, u.plan, u.test, u.date, "testTalk" in u ? ttVal(u.testTalk) : null);
+        return mkUnit(i+1, u.plan, u.test, u.date, "testTalk" in u ? ttVal(u.testTalk) : null, u.start, u.end);
       })
     });
   });
@@ -766,6 +776,7 @@ function gridBar(){
     + '<span><i class="dot bad"></i>Overdue</span>'
     + '<span><i class="dot none"></i>Not Started</span>'
     + '<span>&#128197; Assessment Date (Trigger for Next Unit)</span>'
+    + '<span style="color:var(--gold-soft)">Unit Run Dates (when taught)</span>'
     + '</div>';
   h += '<div class="right">'
     + '<button id="modeGrid" class="' + (state.unitsMode === "grid" ? 'active' : '') + '">&#9638; Grid View</button>'
@@ -811,8 +822,10 @@ function unitGrid(){
         continue;
       }
       var ua = itemState(u, "ua"), up = itemState(u, "up"), tt = itemState(u, "tt");
+      var runTxt = unitRunText(u);
       html += '<td class="icell first-of-unit" title="' + esc(ua.tip) + '"><span class="st ' + ua.cls + '">' + ua.glyph + '</span>'
-        + (u.date ? '<span class="idate">' + fmtShort(u.date) + '</span>' : '<span class="idate">&mdash;</span>') + '</td>';
+        + (u.date ? '<span class="idate">' + fmtShort(u.date) + '</span>' : '<span class="idate">&mdash;</span>')
+        + (runTxt ? '<span class="urun" title="Unit taught ' + esc(runTxt.replace("&ndash;","to")) + '">' + runTxt + '</span>' : '') + '</td>';
       html += '<td class="icell" title="' + esc(up.tip) + '"><span class="st ' + up.cls + '">' + up.glyph + '</span><span class="idate">&nbsp;</span></td>';
       html += '<td class="icell" title="' + esc(tt.tip) + '"><span class="st ' + tt.cls + '">' + tt.glyph + '</span><span class="idate">&nbsp;</span></td>';
     }
@@ -906,7 +919,7 @@ function exportGrid(){
   var stTxt = { done:"Submitted", soon:"Due Soon", over:"Overdue", future:"Not Started", na:"Not Tracked" };
   var head = ["Teacher","School","Subject","Grade","Curriculum Map"];
   for(var n = 1; n <= maxU; n++){
-    head.push("Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
+    head.push("Unit " + n + " Start", "Unit " + n + " End", "Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
   }
   head.push("Alert");
   var lines = [head.join(",")];
@@ -915,8 +928,9 @@ function exportGrid(){
       filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
-      if(!u){ cells.push("","","",""); continue; }
-      cells.push(u.date ? fmtDate(u.date) : "",
+      if(!u){ cells.push("","","","","",""); continue; }
+      cells.push(u.start ? fmtDate(u.start) : "", u.end ? fmtDate(u.end) : "",
+        u.date ? fmtDate(u.date) : "",
         stTxt[itemState(u,"ua").cls], stTxt[itemState(u,"up").cls], stTxt[itemState(u,"tt").cls]);
     }
     var al = teacherAlert(r);

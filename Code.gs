@@ -50,6 +50,16 @@
 //      label from column A, or column B when A is empty. Column B on
 //      a teacher row is that teacher's Curriculum Map, not a subject.
 //
+//   5. UNIT RUN DATES (when the unit is TAUGHT, distinct from the
+//      Test Date when the assessment is given) are read per teacher
+//      per unit from columns titled "Unit n Start" and "Unit n End".
+//      Add those columns to the RIGHT of each tab's existing columns,
+//      in the same header row as "Teacher/Grade" (one Start and one
+//      End per unit: 11 for MCA, 7 for TGE, 13 for MCMS). They are
+//      matched by header text via headerMap(), so exact placement
+//      does not matter and the payload is unaffected until you add
+//      them. Enter the dates as REAL dates, not typed text.
+//
 //   (MCA Unit 7's Shared?/Test Talk? swap and the 11-unit MCA
 //    layout are real in the sheet and are intentionally kept.)
 //
@@ -142,6 +152,7 @@ function buildPayload() {
 
 function readMCA(sheet, tz) {
   var m = sheetMatrix(sheet);
+  var hmap = headerMap(m, tz);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -149,12 +160,15 @@ function readMCA(sheet, tz) {
     if (isHeaderRow(row, tz)) continue;          // MCA header sits on sheet row 3
     if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
-    var units = MCA_UNITS.map(function (u) {
+    var units = MCA_UNITS.map(function (u, i) {
+      var run = unitRunDates(hmap, row, i + 1, tz);
       return {
         plan:     u[0] === null ? '' : norm(row[u[0]], tz),
         date:     norm(row[u[1]], tz),
         shared:   norm(row[u[2]], tz),
-        testTalk: row[u[3]] === true
+        testTalk: row[u[3]] === true,
+        start:    run.start,
+        end:      run.end
       };
     });
     out.push({
@@ -169,6 +183,7 @@ function readMCA(sheet, tz) {
 
 function readTGE(sheet, tz) {
   var m = sheetMatrix(sheet);
+  var hmap = headerMap(m, tz);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -176,13 +191,16 @@ function readTGE(sheet, tz) {
     if (isHeaderRow(row, tz)) continue;
     if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
-    var units = TGE_UNITS.map(function (u) {
+    var units = TGE_UNITS.map(function (u, i) {
+      var run = unitRunDates(hmap, row, i + 1, tz);
       return {
         test:     norm(row[u[0]], tz),
         date:     norm(row[u[1]], tz),
         shared:   norm(row[u[2]], tz),
         bwd:      norm(row[u[3]], tz),
-        testTalk: row[u[4]] === true
+        testTalk: row[u[4]] === true,
+        start:    run.start,
+        end:      run.end
       };
     });
     out.push({
@@ -197,6 +215,7 @@ function readTGE(sheet, tz) {
 
 function readMCMS(sheet, tz) {
   var m = sheetMatrix(sheet);
+  var hmap = headerMap(m, tz);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -204,12 +223,15 @@ function readMCMS(sheet, tz) {
     if (isHeaderRow(row, tz)) continue;
     if (isSubjectHeader(m, r, tz)) { subject = subjectLabel(row, tz); continue; }
     if (norm(row[0], tz) === '') continue;
-    var units = MCMS_UNITS.map(function (u) {
+    var units = MCMS_UNITS.map(function (u, i) {
+      var run = unitRunDates(hmap, row, i + 1, tz);
       return {
         plan:     norm(row[u[0]], tz),
         date:     norm(row[u[1]], tz),
         test:     norm(row[u[2]], tz),
-        testTalk: row[u[3]] === true
+        testTalk: row[u[3]] === true,
+        start:    run.start,
+        end:      run.end
       };
     });
     out.push({
@@ -231,6 +253,41 @@ function sheetMatrix(sheet) {
     values:      rng.getValues(),
     weights:     rng.getFontWeights(),
     backgrounds: rng.getBackgrounds()
+  };
+}
+
+// The row that holds the column titles ("Teacher/Grade" in col A).
+// TGE/MCMS use row 1; MCA uses row 3, so find it rather than assume.
+function headerRowIndex(m, tz) {
+  for (var r = 0; r < m.values.length; r++) {
+    if (norm(m.values[r][0], tz) === 'Teacher/Grade') return r;
+  }
+  return 0;
+}
+
+// Map of normalized header text -> column index, so new columns can
+// be found by their title (e.g. "Unit 3 Start") no matter where they
+// sit. First occurrence of a title wins; repeated titles like
+// "Test Date" are intentionally left to the fixed column maps above.
+function headerMap(m, tz) {
+  var map = {}, row = m.values[headerRowIndex(m, tz)];
+  for (var c = 0; c < row.length; c++) {
+    var h = norm(row[c], tz).toLowerCase().replace(/\s+/g, ' ');
+    if (h !== '' && !(h in map)) map[h] = c;
+  }
+  return map;
+}
+
+// Unit run window (when the unit is TAUGHT) for unit number n, read
+// from the appended "Unit n Start" / "Unit n End" columns by header.
+// Returns '' for either side that has no column or no value yet, so
+// the payload is unaffected until those columns are added.
+function unitRunDates(hmap, row, n, tz) {
+  var sc = hmap['unit ' + n + ' start'];
+  var ec = hmap['unit ' + n + ' end'];
+  return {
+    start: (sc !== undefined) ? norm(row[sc], tz) : '',
+    end:   (ec !== undefined) ? norm(row[ec], tz) : ''
   };
 }
 
@@ -329,6 +386,10 @@ function testPayload() {
   Logger.log('MCA[0] curriculumMap: ' + JSON.stringify(p.MCA.length ? p.MCA[0].curriculumMap : null));
   Logger.log('TGE[0] curriculumMap: ' + JSON.stringify(p.TGE.length ? p.TGE[0].curriculumMap : null));
   Logger.log('MCMS[0] curriculumMap: ' + JSON.stringify(p.MCMS.length ? p.MCMS[0].curriculumMap : null));
+
+  // Unit run dates (Start/End) - blank until the columns are added.
+  Logger.log('MCA[0] Unit 1 run: start="' + (p.MCA.length ? p.MCA[0].units[0].start : '') +
+             '" end="' + (p.MCA.length ? p.MCA[0].units[0].end : '') + '"');
 
   var reece = p.MCMS.filter(function (t) { return t.teacherGrade.indexOf('Reece') === 0; })[0];
   if (reece) Logger.log('Reece last unit (U' + reece.units.length + '): ' + JSON.stringify(reece.units[reece.units.length - 1]));
