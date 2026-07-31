@@ -19,16 +19,18 @@
 // CHANGES IN THIS VERSION (July 2026), re-validated against the
 // live 26-27 workbook header rows, column by column:
 //
-//   1. SUBJECT HEADERS ARE NOW DETECTED BY FORMATTING, not by
-//      "only column A has text". The old rule mistook any teacher
-//      who had not entered unit data yet (just a name in col A)
-//      for a subject heading: that teacher was dropped AND their
-//      name was pinned onto every teacher below them as a bogus
-//      subject, which scrambled both the row list and its order.
-//      Subject rows are bold or shaded in the sheet, so we read
-//      getFontWeights()/getBackgrounds() and treat a bold-or-
-//      shaded row whose column A has text as the subject header.
-//      Plain (non-bold) teacher rows are always kept.
+//   1. SUBJECT HEADERS are detected by BOTH shape and formatting:
+//      a row is a subject band only when column A is the ONLY cell
+//      with content (a sparse row) AND the row is bold or shaded.
+//      - Requiring "sparse" stops shaded DATA rows (e.g. TGE, where
+//        the whole grid is colored) from being mistaken for headers.
+//      - Requiring "bold/shaded" stops a teacher who simply has not
+//        entered unit data yet (just a name in col A) from being
+//        mistaken for a header and dropped, which also used to pin
+//        that teacher's name onto everyone below as a bogus subject
+//        and scramble the row order.
+//      Read via getFontWeights()/getBackgrounds(). Run diagnose()
+//      to see exactly how each tab's rows are shaped and formatted.
 //
 //   2. CURRICULUM MAP COLUMN is now read and emitted for all
 //      three schools:
@@ -258,15 +260,26 @@ function isHeaderRow(row, tz) {
   return norm(row[0], tz) === 'Teacher/Grade';
 }
 
-// A subject header is a bold or shaded row whose column A holds
-// text. This is the reliable signal in the workbook: subject
-// bands (ELA, Math, ...) are formatted, ordinary teacher rows are
-// not. Detecting them by formatting instead of "only col A is
-// filled" stops us from dropping teachers who have a name but no
-// unit data yet.
+// A subject band is a row where column A is the only cell with
+// content AND the row is bold or shaded. Both signals are required:
+// "sparse" alone would drop teachers who have not entered data yet;
+// "formatted" alone would swallow shaded data rows (TGE colors its
+// whole grid). Together they isolate the subject bands (ELA, Math).
 function isSubjectHeader(m, r, tz) {
-  if (norm(m.values[r][0], tz) === '') return false;
+  var row = m.values[r];
+  if (norm(row[0], tz) === '') return false;   // no label in col A -> not a header
+  if (!onlyFirstColFilled(row)) return false;  // real data elsewhere -> a teacher row
   return rowIsBoldOrShaded(m, r);
+}
+
+// True when only column A holds real content (every other cell is
+// empty or an unchecked checkbox).
+function onlyFirstColFilled(row) {
+  for (var j = 1; j < row.length; j++) {
+    var c = row[j];
+    if (c !== '' && c !== null && c !== undefined && c !== false) return false;
+  }
+  return true;
 }
 
 function rowIsBoldOrShaded(m, r) {
@@ -318,6 +331,41 @@ function testPayload() {
   if (reece) Logger.log('Reece last unit (U' + reece.units.length + '): ' + JSON.stringify(reece.units[reece.units.length - 1]));
 
   Logger.log(JSON.stringify(p.MCA[0], null, 2));
+}
+
+// ---- FORMATTING / SHAPE DIAGNOSTIC ----
+// Select this in the dropdown and Run. For each tab it prints the
+// first 20 non-blank rows with: bold?, column A background color,
+// sparse? (only col A filled), and the first three column values.
+// Use it to confirm how subject bands differ from teacher rows so
+// isSubjectHeader can be tuned if a tab hides teachers or leaks
+// headers.
+function diagnose() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var tz = ss.getSpreadsheetTimeZone();
+  ['MCA', 'TGE', 'MCMS'].forEach(function (name) {
+    var sheet = ss.getSheetByName(name);
+    if (!sheet) { Logger.log(name + ': NOT FOUND'); return; }
+    var m = sheetMatrix(sheet);
+    Logger.log('===== ' + name + ' : ' + m.values.length + ' rows x ' +
+               (m.values[0] ? m.values[0].length : 0) + ' cols =====');
+    var shown = 0;
+    for (var r = 0; r < m.values.length && shown < 20; r++) {
+      var row = m.values[r];
+      if (blankRow(row)) continue;
+      shown++;
+      var bold = false;
+      for (var j = 0; j < m.weights[r].length; j++) {
+        if (m.weights[r][j] === 'bold') { bold = true; break; }
+      }
+      Logger.log('r' + r +
+        ' | bold=' + bold +
+        ' | bgA=' + m.backgrounds[r][0] +
+        ' | sparse=' + onlyFirstColFilled(row) +
+        ' | header=' + isSubjectHeader(m, r, tz) +
+        ' | A="' + norm(row[0], tz) + '" B="' + norm(row[1], tz) + '" C="' + norm(row[2], tz) + '"');
+    }
+  });
 }
 
 // ---- DATE AUDIT ----
