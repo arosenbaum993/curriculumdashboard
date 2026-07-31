@@ -456,19 +456,19 @@ function normalize(schools){
   (schools.MCA || []).forEach(function(t){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
-      sub:t.course || "",
+      sub:"", map:t.curriculumMap,
       units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk)); })
     });
   });
   (schools.TGE || []).forEach(function(t){
     rows.push({
-      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"",
+      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"", map:t.curriculumMap,
       units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk)); })
     });
   });
   (schools.MCMS || []).forEach(function(t){
     rows.push({
-      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"",
+      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"", map:t.curriculumMap,
       units:(t.units || []).map(function(u,i){
         /* Test Talk column added to the MCMS tab; if the Apps Script
            payload does not include u.testTalk yet, this stays null
@@ -637,7 +637,7 @@ function teacherTable(rows, compact){
   var showSchool = state.school === "DISTRICT";
   var html = '<div class="table-shell"><table><thead><tr>'
     + (showSchool ? '<th>School</th>' : '')
-    + '<th>Teacher / Grade</th><th>Subject</th><th>Plans</th><th>Assessments</th><th>Test Talk</th><th>Status</th><th>Next Test Date</th></tr></thead><tbody>';
+    + '<th>Teacher / Grade</th><th>Subject</th><th>Curr. Map</th><th>Plans</th><th>Assessments</th><th>Test Talk</th><th>Status</th><th>Next Test Date</th></tr></thead><tbody>';
   var shown = 0;
   rows.forEach(function(r){
     var a = rowAgg(r);
@@ -648,13 +648,14 @@ function teacherTable(rows, compact){
       + (showSchool ? '<td class="cell-sub">' + esc(r.school) + '</td>' : '')
       + '<td class="cell-name">' + esc(r.label) + (r.sub ? ' <span class="cell-sub">&middot; ' + esc(r.sub) + '</span>' : '') + '</td>'
       + '<td class="cell-sub">' + esc(r.subject) + '</td>'
+      + '<td class="num" title="Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted') + '">' + mark(filled(r.map)) + '</td>'
       + '<td class="num">' + a.plans + ' / ' + a.active + '</td>'
       + '<td class="num">' + a.assess + ' / ' + a.active + '</td>'
       + '<td class="num">' + (a.ttTracked ? a.ttDone + ' / ' + a.ttDue : '<span class="mark-none">&mdash;</span>') + '</td>'
       + '<td>' + statusPill(a.worst) + '</td>'
       + '<td class="num">' + (a.next ? fmtDate(a.next) : '<span class="cell-sub">&mdash;</span>') + '</td></tr>';
   });
-  if(!shown) html += '<tr><td colspan="8" class="empty-note" style="padding:18px">Nothing matches.</td></tr>';
+  if(!shown) html += '<tr><td colspan="9" class="empty-note" style="padding:18px">Nothing matches.</td></tr>';
   html += '</tbody></table></div>';
   return (compact ? '' : toolbarHtml(["all","flagged"], {all:"All", flagged:"Needs attention"})) + html;
 }
@@ -818,7 +819,8 @@ function unitGrid(){
   rows.forEach(function(r){
     var al = teacherAlert(r);
     html += '<tr><td class="cell-teacher"><span class="cell-name">' + esc(r.label) + '</span>'
-      + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span></td>';
+      + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span>'
+      + '<br><span class="cell-sub">Curriculum Map: ' + mark(filled(r.map)) + '</span></td>';
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){
@@ -921,14 +923,15 @@ function exportGrid(){
   var maxU = 0;
   rows.forEach(function(r){ if(r.units.length > maxU) maxU = r.units.length; });
   var stTxt = { done:"Submitted", soon:"Due Soon", over:"Overdue", future:"Not Started", na:"Not Tracked" };
-  var head = ["Teacher","School","Subject","Grade"];
+  var head = ["Teacher","School","Subject","Grade","Curriculum Map"];
   for(var n = 1; n <= maxU; n++){
     head.push("Unit " + n + " Test Date", "Unit " + n + " UA", "Unit " + n + " UP (SDI)", "Unit " + n + " TT");
   }
   head.push("Alert");
   var lines = [head.join(",")];
   rows.forEach(function(r){
-    var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r)];
+    var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
+      filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){ cells.push("","","",""); continue; }
