@@ -37,7 +37,10 @@
 //        MCMS -> column B (index 1)
 //        TGE  -> column C (index 2)
 //      Previously TGE skipped it, MCMS misread it as the subject,
-//      and MCA mislabeled it as the teacher's "course".
+//      and MCA mislabeled it as the teacher's "course". The cell's
+//      hyperlink is also emitted as curriculumMapUrl (via
+//      columnLinkUrls) so the dashboard can link to the map; it
+//      covers text links, first-run links, and =HYPERLINK() cells.
 //
 //   3. MCMS MAP REBUILT to match the live sheet: 13 units, every
 //      unit 4 columns wide (Plan, Test Date, Test, Test Talk?).
@@ -153,6 +156,7 @@ function buildPayload() {
 function readMCA(sheet, tz) {
   var m = sheetMatrix(sheet);
   var hmap = headerMap(m, tz);
+  var mapUrls = columnLinkUrls(sheet, MCA_MAP_COL, m.values.length);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -175,6 +179,7 @@ function readMCA(sheet, tz) {
       subject: subject,
       name: norm(row[0], tz),
       curriculumMap: mapVal(row[MCA_MAP_COL], tz),
+      curriculumMapUrl: mapUrls[r],
       units: units
     });
   }
@@ -184,6 +189,7 @@ function readMCA(sheet, tz) {
 function readTGE(sheet, tz) {
   var m = sheetMatrix(sheet);
   var hmap = headerMap(m, tz);
+  var mapUrls = columnLinkUrls(sheet, TGE_MAP_COL, m.values.length);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -207,6 +213,7 @@ function readTGE(sheet, tz) {
       subject: subject,
       grade: norm(row[0], tz),
       curriculumMap: mapVal(row[TGE_MAP_COL], tz),
+      curriculumMapUrl: mapUrls[r],
       units: units
     });
   }
@@ -216,6 +223,7 @@ function readTGE(sheet, tz) {
 function readMCMS(sheet, tz) {
   var m = sheetMatrix(sheet);
   var hmap = headerMap(m, tz);
+  var mapUrls = columnLinkUrls(sheet, MCMS_MAP_COL, m.values.length);
   var out = [], subject = '';
   for (var r = 1; r < m.values.length; r++) {
     var row = m.values[r];
@@ -238,6 +246,7 @@ function readMCMS(sheet, tz) {
       subject: subject,
       teacherGrade: norm(row[0], tz),
       curriculumMap: mapVal(row[MCMS_MAP_COL], tz),
+      curriculumMapUrl: mapUrls[r],
       units: units
     });
   }
@@ -254,6 +263,40 @@ function sheetMatrix(sheet) {
     weights:     rng.getFontWeights(),
     backgrounds: rng.getBackgrounds()
   };
+}
+
+// Extract the hyperlink URL from every cell of one column, indexed by
+// row (0-based). Handles all the ways a Curriculum Map link can be
+// stored: a link applied to the cell text, a link on the first run of
+// mixed text, or a =HYPERLINK("url","label") formula. Cells with no
+// link return ''. Two batched calls, so it stays cheap.
+function columnLinkUrls(sheet, col0, numRows) {
+  if (numRows < 1) return [];
+  var rng = sheet.getRange(1, col0 + 1, numRows, 1);
+  var rich = rng.getRichTextValues();
+  var forms = rng.getFormulas();
+  var out = [];
+  for (var i = 0; i < numRows; i++) {
+    out.push(extractLinkUrl(rich[i][0], forms[i][0]));
+  }
+  return out;
+}
+
+function extractLinkUrl(rtv, formula) {
+  if (rtv) {
+    var u = rtv.getLinkUrl();
+    if (u) return u;
+    var runs = rtv.getRuns();
+    for (var j = 0; j < runs.length; j++) {
+      var ru = runs[j].getLinkUrl();
+      if (ru) return ru;
+    }
+  }
+  if (formula && /^=HYPERLINK\(/i.test(formula)) {
+    var m = formula.match(/=HYPERLINK\(\s*"([^"]+)"/i);
+    if (m) return m[1];
+  }
+  return '';
 }
 
 // The row that holds the column titles ("Teacher/Grade" in col A).
@@ -386,6 +429,7 @@ function testPayload() {
   Logger.log('MCA[0] curriculumMap: ' + JSON.stringify(p.MCA.length ? p.MCA[0].curriculumMap : null));
   Logger.log('TGE[0] curriculumMap: ' + JSON.stringify(p.TGE.length ? p.TGE[0].curriculumMap : null));
   Logger.log('MCMS[0] curriculumMap: ' + JSON.stringify(p.MCMS.length ? p.MCMS[0].curriculumMap : null));
+  Logger.log('MCA[0] curriculumMapUrl: ' + JSON.stringify(p.MCA.length ? p.MCA[0].curriculumMapUrl : null));
 
   // Unit run dates (Start/End) - blank until the columns are added.
   Logger.log('MCA[0] Unit 1 run: start="' + (p.MCA.length ? p.MCA[0].units[0].start : '') +

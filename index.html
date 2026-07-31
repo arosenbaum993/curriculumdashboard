@@ -232,6 +232,8 @@ tr.subject-row td{
 .st.na{color:var(--none);border:none;background:transparent}
 .icell .idate{display:block;font-size:.7rem;color:var(--muted);margin-top:3px;white-space:nowrap}
 .icell .urun{display:block;font-size:.66rem;color:var(--gold-soft);margin-top:2px;white-space:nowrap}
+a.maplink{text-decoration:none;cursor:pointer}
+a.maplink:hover{filter:brightness(1.25)}
 
 .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;align-items:start}
 .cards-row .panel{padding:16px 18px;font-size:.9rem}
@@ -485,19 +487,19 @@ function normalize(schools){
   (schools.MCA || []).forEach(function(t){
     rows.push({
       school:"MCA", subject:t.subject || "", label:t.name || "",
-      sub:(typeof t.curriculumMap === "string" ? t.curriculumMap : ""), map:t.curriculumMap,
+      sub:(typeof t.curriculumMap === "string" ? t.curriculumMap : ""), map:t.curriculumMap, mapUrl:t.curriculumMapUrl,
       units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.plan, u.shared, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.TGE || []).forEach(function(t){
     rows.push({
-      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"", map:t.curriculumMap,
+      school:"TGE", subject:t.subject || "", label:t.grade || "", sub:"", map:t.curriculumMap, mapUrl:t.curriculumMapUrl,
       units:(t.units || []).map(function(u,i){ return mkUnit(i+1, u.shared, u.test, u.date, ttVal(u.testTalk), u.start, u.end); })
     });
   });
   (schools.MCMS || []).forEach(function(t){
     rows.push({
-      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"", map:t.curriculumMap,
+      school:"MCMS", subject:t.subject || "", label:t.teacherGrade || "", sub:"", map:t.curriculumMap, mapUrl:t.curriculumMapUrl,
       units:(t.units || []).map(function(u,i){
         /* Test Talk column added to the MCMS tab; if the Apps Script
            payload does not include u.testTalk yet, this stays null
@@ -572,6 +574,13 @@ function fmtStamp(d){
 }
 function pct(a,b){ return b ? Math.round(100*a/b) : 0; }
 function mark(v){ return v ? '<span class="mark-ok">&#10003;</span>' : '<span class="mark-bad">&#9888;</span>'; }
+/* curriculum-map indicator: a link to the map when one is on file,
+   otherwise the plain check/warning glyph */
+function mapMark(r){
+  if(!filled(r.map)) return mark(false);
+  var url = r.mapUrl || (/^https?:\/\//i.test(String(r.map)) ? r.map : "");
+  return url ? '<a class="maplink" href="' + esc(url) + '" target="_blank" rel="noopener" title="Open curriculum map">' + mark(true) + '</a>' : mark(true);
+}
 function pill(cls, text){ return '<span class="pill ' + cls + '">' + esc(text) + '</span>'; }
 function statusPill(worst){
   return worst === "ok" ? pill("ok","On Track")
@@ -677,7 +686,7 @@ function teacherTable(rows, compact){
       + (showSchool ? '<td class="cell-sub">' + esc(r.school) + '</td>' : '')
       + '<td class="cell-name">' + esc(r.label) + (r.sub ? ' <span class="cell-sub">&middot; ' + esc(r.sub) + '</span>' : '') + '</td>'
       + '<td class="cell-sub">' + esc(r.subject) + '</td>'
-      + '<td class="num" title="Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted') + '">' + mark(filled(r.map)) + '</td>'
+      + '<td class="num" title="Curriculum Map ' + (filled(r.map) ? 'submitted' : 'not submitted') + '">' + mapMark(r) + '</td>'
       + '<td class="num">' + a.plans + ' / ' + a.active + '</td>'
       + '<td class="num">' + a.assess + ' / ' + a.active + '</td>'
       + '<td class="num">' + (a.ttTracked ? a.ttDone + ' / ' + a.ttDue : '<span class="mark-none">&mdash;</span>') + '</td>'
@@ -831,7 +840,7 @@ function unitGrid(){
     var al = teacherAlert(r);
     html += '<tr><td class="cell-teacher"><span class="cell-name">' + esc(r.label) + '</span>'
       + '<br><span class="cell-sub">' + esc((showSchool ? r.school + ' · ' : '') + r.subject + (r.sub ? ' · ' + r.sub : '')) + '</span>'
-      + '<br><span class="cell-sub">Curriculum Map: ' + mark(filled(r.map)) + '</span></td>';
+      + '<br><span class="cell-sub">Curriculum Map: ' + mapMark(r) + '</span></td>';
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){
@@ -944,7 +953,7 @@ function exportGrid(){
   var lines = [head.join(",")];
   rows.forEach(function(r){
     var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
-      filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
+      filled(r.map) ? csvCell(r.mapUrl || String(r.map)) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){ cells.push("","","","","",""); continue; }
