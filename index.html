@@ -783,30 +783,11 @@ function unitGrid(){
     return '<div class="table-shell"><table><tbody><tr><td class="empty-note" style="padding:18px">Nothing matches the current filters.</td></tr></tbody></table></div>';
   }
 
-  /* unit header windows derived from teacher test dates in scope:
-     window = earliest-to-latest test date for that unit number,
-     assessment due = latest date. There is no district pacing
-     calendar in the workbook, so this is inferred, not fixed.   */
-  var winByUnit = [];
-  for(var i = 0; i < maxU; i++){
-    var dates = [];
-    rows.forEach(function(r){
-      var u = r.units[i];
-      if(u && u.active && u.date) dates.push(u.date);
-    });
-    dates.sort(function(a,b){ return a - b; });
-    winByUnit.push(dates.length ? { lo:dates[0], hi:dates[dates.length-1] } : null);
-  }
-
   var showSchool = state.school === "DISTRICT";
   var html = '<div class="table-shell"><table class="upg"><thead><tr>'
     + '<th class="th-teacher" rowspan="2">Teacher</th>';
   for(var n = 0; n < maxU; n++){
-    var w = winByUnit[n];
-    html += '<th class="unit-head" colspan="3">Unit ' + (n+1)
-      + (w ? '<span class="uh-win">' + fmtShort(w.lo) + ' &ndash; ' + fmtShort(w.hi) + '</span><span class="uh-due">Assessment Due: ' + fmtShort(w.hi) + '</span>'
-           : '<span class="uh-win">&mdash;</span>')
-      + '</th>';
+    html += '<th class="unit-head" colspan="3">Unit ' + (n+1) + '</th>';
   }
   html += '<th class="th-alert" rowspan="2">Ahead of Pace Alerts</th></tr><tr class="subhead">';
   for(n = 0; n < maxU; n++){
