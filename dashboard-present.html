@@ -574,13 +574,9 @@ function fmtStamp(d){
 }
 function pct(a,b){ return b ? Math.round(100*a/b) : 0; }
 function mark(v){ return v ? '<span class="mark-ok">&#10003;</span>' : '<span class="mark-bad">&#9888;</span>'; }
-/* curriculum-map indicator: a link to the map when one is on file,
-   otherwise the plain check/warning glyph */
-function mapMark(r){
-  if(!filled(r.map)) return mark(false);
-  var url = r.mapUrl || (/^https?:\/\//i.test(String(r.map)) ? r.map : "");
-  return url ? '<a class="maplink" href="' + esc(url) + '" target="_blank" rel="noopener" title="Open curriculum map">' + mark(true) + '</a>' : mark(true);
-}
+/* curriculum-map indicator: plain check when a map is on file,
+   warning glyph when it is not (no link shown) */
+function mapMark(r){ return mark(filled(r.map)); }
 function pill(cls, text){ return '<span class="pill ' + cls + '">' + esc(text) + '</span>'; }
 function statusPill(worst){
   return worst === "ok" ? pill("ok","On Track")
@@ -953,7 +949,7 @@ function exportGrid(){
   var lines = [head.join(",")];
   rows.forEach(function(r){
     var cells = [csvCell(r.label), r.school, csvCell(r.subject), gradeOf(r),
-      filled(r.map) ? (r.mapUrl ? csvCell(r.mapUrl) : (r.map === true ? "Submitted" : csvCell(String(r.map)))) : "Not Submitted"];
+      filled(r.map) ? (r.map === true ? "Submitted" : csvCell(String(r.map))) : "Not Submitted"];
     for(var i = 0; i < maxU; i++){
       var u = r.units[i];
       if(!u){ cells.push("","","","","",""); continue; }
