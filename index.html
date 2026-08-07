@@ -340,6 +340,26 @@ var ACADEMIC_YEAR_START = 2026;   /* 2026 renders "2026-2027"; Aug-Dec -> 2026, 
 var DUE_SOON_DAYS = 14;           /* window for "due soon" flags and the deadline panel */
 var GRID_DUE_SOON_DAYS = 7;       /* tighter window used by the Unit Progress grid, per mockup */
 
+/* ---------------- TEST TALK DUE RULE ----------------
+   A Test Talk happens AFTER the teacher has taught the unit. It is
+   not a pre-instruction deliverable like the unit plan or the unit
+   assessment, so it must never be counted against a teacher until
+   the unit has actually run.
+
+   TT_GRACE_DAYS       days after the unit is taught before the Test
+                       Talk is considered outstanding.
+   TT_REQUIRE_TAUGHT_DATE
+                       true  = only a real "Unit n End" date proves a
+                               unit was taught. Nothing else counts.
+                               (Strictest. Use once Start/End columns
+                               are populated on all three tabs.)
+                       false = fall back to the Test Date, but ONLY
+                               when it is a real date on the sheet,
+                               never a month-only text guess.
+   ---------------------------------------------------- */
+var TT_GRACE_DAYS = 5;
+var TT_REQUIRE_TAUGHT_DATE = false;
+
 var SCHOOL_NAMES = {
   DISTRICT: "McIntosh County Schools",
   TGE:  "Todd Grant Elementary",
@@ -414,7 +434,13 @@ function filled(v){
   return true;
 }
 var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
-function parseDate(s){
+/* parseDate(s, meta) - meta is an optional object; when supplied,
+   meta.inexact is set to true if the day of the month had to be
+   GUESSED (month-only text such as "September" -> the 15th) or if
+   the value fell through to the browser's loose Date parser. An
+   inexact date is fine for display but must never be used to prove
+   that a unit was taught. */
+function parseDate(s, meta){
   if(!s) return null;
   s = String(s).trim();
   var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
@@ -449,13 +475,16 @@ function parseDate(s){
         });
         if(yr === null) yr = (mo2 >= 7 ? ACADEMIC_YEAR_START : ACADEMIC_YEAR_START+1);
         else if(yr < 100) yr += 2000;
+        if(day === null && meta) meta.inexact = true;   /* day was guessed */
         var dd = new Date(yr, mo2, day === null ? 15 : day);
         return isNaN(dd) ? null : dd;
       }
     }
   }
   var d2 = new Date(s);
-  return isNaN(d2) ? null : d2;
+  if(isNaN(d2)) return null;
+  if(meta) meta.inexact = true;                          /* loose parse */
+  return d2;
 }
 function ttVal(v){
   /* checkbox true/false, or text like "x" / "yes"; blank means not done */
@@ -465,11 +494,13 @@ function ttVal(v){
   return filled(v);
 }
 function mkUnit(n, plan, assess, dateStr, tt, startStr, endStr){
-  var date = parseDate(dateStr);
+  var dmeta = {};
+  var date = parseDate(dateStr, dmeta);
   var start = parseDate(startStr), end = parseDate(endStr);
   var p = filled(plan), a = filled(assess);
   return {
     n:n, plan:p, assess:a, date:date, dateStr:dateStr || "",
+    dateExact:!!date && !dmeta.inexact,
     start:start, startStr:startStr || "", end:end, endStr:endStr || "",
     tt:(tt === true || tt === false) ? tt : null,
     active:(p || a || !!date || !!start || !!end)
@@ -518,6 +549,30 @@ function normalize(schools){
 function today(){ var d = new Date(); d.setHours(0,0,0,0); return d; }
 function daysUntil(date){ return Math.round((date - today()) / 86400000); }
 
+/* ---------------- TEST TALK GATE ----------------
+   ONE place decides whether a Test Talk is outstanding. Every view
+   calls it, so the Overview, the Teachers table, the Unit grid and
+   the Test Talk tab can no longer disagree with each other.
+
+   taughtDate(u)  best available evidence that the unit actually ran:
+                    1. "Unit n End" (the run window close) - trusted
+                    2. the Test Date, but only if it is a REAL date
+                       (a month-only text guess is not evidence)
+                  no evidence -> null -> nothing is ever due.
+   ttIsDue(u)     tracked, taught, and past the grace window.
+   ttPending(u)   due and not yet marked complete.               */
+function taughtDate(u){
+  if(u.end) return u.end;
+  if(TT_REQUIRE_TAUGHT_DATE) return null;
+  return (u.date && u.dateExact) ? u.date : null;
+}
+function ttIsDue(u){
+  if(!u.active || u.tt === null) return false;
+  var t = taughtDate(u);
+  return !!t && daysUntil(t) <= -TT_GRACE_DAYS;
+}
+function ttPending(u){ return ttIsDue(u) && u.tt !== true; }
+
 function unitStatus(u){
   if(!u.active) return null;
   var complete = u.plan && u.assess;
@@ -538,7 +593,7 @@ function rowAgg(row){
   var act = row.units.filter(function(u){ return u.active; });
   var plans = act.filter(function(u){ return u.plan; }).length;
   var assess = act.filter(function(u){ return u.assess; }).length;
-  var ttDue = act.filter(function(u){ return u.tt !== null && u.date && daysUntil(u.date) < 0; });
+  var ttDue = act.filter(ttIsDue);
   var ttDone = ttDue.filter(function(u){ return u.tt === true; }).length;
   var worst = "ok";
   act.forEach(function(u){
@@ -614,7 +669,7 @@ function viewOverview(){
   var units = collectUnits(rows);
   var plans = units.filter(function(x){ return x.u.plan; }).length;
   var assess = units.filter(function(x){ return x.u.assess; }).length;
-  var ttDue = units.filter(function(x){ return x.u.tt !== null && x.u.date && daysUntil(x.u.date) < 0; });
+  var ttDue = units.filter(function(x){ return ttIsDue(x.u); });
   var ttDone = ttDue.filter(function(x){ return x.u.tt === true; }).length;
   var flagged = units.filter(function(x){ return !x.s.complete && (x.s.urgency === "past" || x.s.urgency === "soon"); });
   var upcoming = units.filter(function(x){
@@ -625,7 +680,7 @@ function viewOverview(){
   var html = '<div class="section"><div class="section-title">At a Glance</div><div class="cards">'
     + kpi(pPct + "%", pPct === 100 ? "ok" : pPct >= 85 ? "warn" : "bad", "Unit plans submitted", plans + " of " + units.length + " units")
     + kpi(aPct + "%", aPct === 100 ? "ok" : aPct >= 85 ? "warn" : "bad", "Assessments submitted", assess + " of " + units.length + " units")
-    + kpi(ttDue.length ? pct(ttDone, ttDue.length) + "%" : "&mdash;", ttDue.length && ttDone === ttDue.length ? "ok" : ttDue.length ? "warn" : "gold", "Test talk completed", ttDue.length ? ttDone + " of " + ttDue.length + " administered units" : "No units administered yet")
+    + kpi(ttDue.length ? pct(ttDone, ttDue.length) + "%" : "&mdash;", ttDue.length && ttDone === ttDue.length ? "ok" : ttDue.length ? "warn" : "gold", "Test talk completed", ttDue.length ? ttDone + " of " + ttDue.length + " units taught" : "No units taught yet")
     + kpi(String(flagged.length), flagged.length ? "bad" : "ok", "Units flagged", "Missing items, due or past due")
     + kpi(String(upcoming.length), "info", "Deadlines next " + DUE_SOON_DAYS + " days", "Unit test dates")
     + '</div></div>';
@@ -635,7 +690,7 @@ function viewOverview(){
   html += '<div class="panel"><h3>Submission Status Overview</h3><div class="table-shell" style="max-height:none;border:none"><table><thead><tr><th>Submission Type</th><th>Required</th><th>Completed</th><th style="width:180px">Percent</th><th>Status</th></tr></thead><tbody>'
     + subRow("Unit Plans", units.length, plans)
     + subRow("Unit Assessments", units.length, assess)
-    + subRow("Test Talk (administered units)", ttDue.length, ttDone)
+    + subRow("Test Talk (units already taught)", ttDue.length, ttDone, true)
     + '</tbody></table></div></div>';
   html += '<div class="panel"><h3>Upcoming Deadlines (Next ' + DUE_SOON_DAYS + ' Days)</h3>';
   if(!upcoming.length) html += '<div class="empty-note">No unit test dates in the next ' + DUE_SOON_DAYS + ' days.</div>';
@@ -657,12 +712,22 @@ function viewOverview(){
 function kpi(val, cls, lbl, sub){
   return '<div class="card"><div class="val ' + cls + '">' + val + '</div><div class="lbl">' + esc(lbl) + '</div><div class="sub">' + esc(sub) + '</div></div>';
 }
-function subRow(name, req, done){
+/* softFail = this row is a follow-up conversation, not a
+   pre-instruction deliverable. It can read "Pending" but it must
+   never read "Behind", because a teacher cannot be behind on a
+   conversation that is not yet owed. */
+function subRow(name, req, done, softFail){
   var p = pct(done, req);
   var cls = req === 0 ? "ok" : p === 100 ? "" : p >= 85 ? "warn" : "bad";
+  if(softFail && cls === "bad") cls = "warn";
+  var badge = req === 0 ? pill("none","Not Yet Due")
+            : p === 100 ? pill("ok","On Track")
+            : softFail ? pill("warn","Pending")
+            : p >= 85  ? pill("warn","Attention")
+            : pill("bad","Behind");
   return '<tr><td class="cell-name">' + esc(name) + '</td><td class="num">' + req + '</td><td class="num">' + done + '</td>'
     + '<td><div class="bar"><i class="' + cls + '" style="width:' + (req ? p : 100) + '%"></i></div></td>'
-    + '<td>' + (req === 0 ? pill("none","Not Yet Due") : p === 100 ? pill("ok","On Track") : p >= 85 ? pill("warn","Attention") : pill("bad","Behind")) + '</td></tr>';
+    + '<td>' + badge + '</td></tr>';
 }
 function schoolTag(row){ return state.school === "DISTRICT" ? row.school + " &middot; " : ""; }
 
@@ -711,8 +776,10 @@ function itemState(u, kind){
   if(kind === "tt"){
     if(u.tt === null) return { cls:"na", glyph:"&mdash;", tip:"Test Talk not tracked for this unit" };
     if(u.tt === true) return { cls:"done", glyph:"&#10003;", tip:"Test Talk complete" };
-    if(u.date && daysUntil(u.date) < 0) return { cls:"over", glyph:"!", tip:"Test Talk overdue (unit administered " + fmtShort(u.date) + ")" };
-    return { cls:"future", glyph:"&ndash;", tip:"Test Talk due after the unit assessment is administered" };
+    if(ttIsDue(u)) return { cls:"over", glyph:"!", tip:"Test Talk outstanding (unit taught " + fmtShort(taughtDate(u)) + ", " + TT_GRACE_DAYS + "-day window passed)" };
+    var t = taughtDate(u);
+    if(t) return { cls:"soon", glyph:"&#9719;", tip:"Test Talk window open (unit taught " + fmtShort(t) + ")" };
+    return { cls:"future", glyph:"&ndash;", tip:"Not yet due - Test Talk is owed only after the unit has been taught" };
   }
   var done = kind === "ua" ? u.assess : u.plan;
   var name = kind === "ua" ? "Assessment" : "Plan";
@@ -729,17 +796,24 @@ function itemState(u, kind){
 function teacherAlert(r){
   var over = [], soon = [];
   r.units.forEach(function(u){
-    if(!u.active || !u.date) return;
-    var d = daysUntil(u.date);
-    if(!u.assess){
-      if(d < 0) over.push("Unit " + u.n + " Assessment overdue");
-      else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Assessment due in " + d + " day" + (d === 1 ? "" : "s"));
+    if(!u.active) return;
+    /* Plan and Assessment are owed BEFORE instruction, so they are
+       measured against the Test Date. Guard for units that have a
+       run window but no test date yet. */
+    if(u.date){
+      var d = daysUntil(u.date);
+      if(!u.assess){
+        if(d < 0) over.push("Unit " + u.n + " Assessment overdue");
+        else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Assessment due in " + d + " day" + (d === 1 ? "" : "s"));
+      }
+      if(!u.plan){
+        if(d < 0) over.push("Unit " + u.n + " Plan overdue");
+        else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Plan due soon");
+      }
     }
-    if(!u.plan){
-      if(d < 0) over.push("Unit " + u.n + " Plan overdue");
-      else if(d <= GRID_DUE_SOON_DAYS) soon.push("Unit " + u.n + " Plan due soon");
-    }
-    if(u.tt === false && d < 0) over.push("Unit " + u.n + " Test Talk overdue");
+    /* Test Talk is owed AFTER the unit is taught, so it is surfaced
+       as attention, never as an overdue item that reads "Behind". */
+    if(ttPending(u)) soon.push("Unit " + u.n + " Test Talk pending");
   });
   var all = over.concat(soon).join(" · ");
   if(over.length > 1) return { cls:"bad",  txt:"&#9888; Multiple items overdue", tip:all };
@@ -1008,29 +1082,29 @@ function viewAssessments(){
 
 function viewTestTalk(){
   var units = collectUnits(scopeRows()).filter(function(x){
-    return x.u.tt !== null && x.u.date && daysUntil(x.u.date) < 0;
+    return ttIsDue(x.u) || x.u.tt === true;
   });
   var q = state.search.toLowerCase();
   var showSchool = state.school === "DISTRICT";
   var html = toolbarHtml(["all","pending"], {all:"All", pending:"Pending"});
   html += '<div class="table-shell"><table><thead><tr>'
     + (showSchool ? '<th>School</th>' : '')
-    + '<th>Teacher / Grade</th><th>Unit</th><th>Administered</th><th>Test Talk</th><th>Status</th></tr></thead><tbody>';
+    + '<th>Teacher / Grade</th><th>Unit</th><th>Unit Taught</th><th>Test Talk</th><th>Status</th></tr></thead><tbody>';
   var shown = 0;
-  units.sort(function(a,b){ return b.u.date - a.u.date; });
+  units.sort(function(a,b){ return (taughtDate(b.u) || b.u.date || 0) - (taughtDate(a.u) || a.u.date || 0); });
   units.forEach(function(x){
-    if(state.filter === "pending" && x.u.tt === true) return;
+    if(state.filter === "pending" && !ttPending(x.u)) return;
     if(q && (x.row.label + " " + x.row.subject).toLowerCase().indexOf(q) === -1) return;
     shown++;
     html += '<tr>'
       + (showSchool ? '<td class="cell-sub">' + esc(x.row.school) + '</td>' : '')
       + '<td class="cell-name">' + esc(x.row.label) + '</td>'
       + '<td class="num">Unit ' + x.u.n + '</td>'
-      + '<td class="num">' + fmtDate(x.u.date) + '</td>'
-      + '<td>' + mark(x.u.tt === true) + '</td>'
-      + '<td>' + (x.u.tt === true ? pill("ok","Complete") : pill("warn","Pending")) + '</td></tr>';
+      + '<td class="num">' + (fmtDate(taughtDate(x.u)) || '<span class="cell-sub">&mdash;</span>') + '</td>'
+      + '<td>' + (x.u.tt === true ? mark(true) : '<span class="mark-none">&mdash;</span>') + '</td>'
+      + '<td>' + (x.u.tt === true ? pill("ok","Complete") : ttIsDue(x.u) ? pill("warn","Pending") : pill("none","Not Yet Due")) + '</td></tr>';
   });
-  if(!shown) html += '<tr><td colspan="6" class="empty-note" style="padding:18px">No administered units yet.</td></tr>';
+  if(!shown) html += '<tr><td colspan="6" class="empty-note" style="padding:18px">No units taught yet - no Test Talks are due.</td></tr>';
   html += '</tbody></table></div>';
   return '<div class="section"><div class="section-title">Test Talk</div>' + html + '</div>';
 }

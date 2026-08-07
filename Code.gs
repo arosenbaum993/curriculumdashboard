@@ -170,7 +170,7 @@ function readMCA(sheet, tz) {
         plan:     u[0] === null ? '' : norm(row[u[0]], tz),
         date:     norm(row[u[1]], tz),
         shared:   norm(row[u[2]], tz),
-        testTalk: row[u[3]] === true,
+        testTalk: ttRaw(row[u[3]], tz),
         start:    run.start,
         end:      run.end
       };
@@ -204,7 +204,7 @@ function readTGE(sheet, tz) {
         date:     norm(row[u[1]], tz),
         shared:   norm(row[u[2]], tz),
         bwd:      norm(row[u[3]], tz),
-        testTalk: row[u[4]] === true,
+        testTalk: ttRaw(row[u[4]], tz),
         start:    run.start,
         end:      run.end
       };
@@ -237,7 +237,7 @@ function readMCMS(sheet, tz) {
         plan:     norm(row[u[0]], tz),
         date:     norm(row[u[1]], tz),
         test:     norm(row[u[2]], tz),
-        testTalk: row[u[3]] === true,
+        testTalk: ttRaw(row[u[3]], tz),
         start:    run.start,
         end:      run.end
       };
@@ -332,6 +332,24 @@ function unitRunDates(hmap, row, n, tz) {
     start: (sc !== undefined) ? norm(row[sc], tz) : '',
     end:   (ec !== undefined) ? norm(row[ec], tz) : ''
   };
+}
+
+// Test Talk cell -> true / false / text / null.
+// The old code did `row[c] === true`, which collapsed EVERYTHING
+// that was not a ticked checkbox into a hard false. That made a
+// teacher who typed "x", "Yes", a date, or initials look exactly
+// like a teacher who had done nothing, and it made an empty,
+// not-yet-applicable cell look like a refusal. Now:
+//   ticked checkbox  -> true
+//   unticked checkbox-> false
+//   any text         -> the text (the dashboard decides)
+//   empty cell       -> null  = NOT TRACKED / NOT YET DUE
+// null is the important one: the dashboard renders it as "-" and
+// excludes it from the Test Talk denominator entirely.
+function ttRaw(v, tz) {
+  if (v === true || v === false) return v;
+  var s = norm(v, tz);
+  return s === '' ? null : s;
 }
 
 function norm(v, tz) {
